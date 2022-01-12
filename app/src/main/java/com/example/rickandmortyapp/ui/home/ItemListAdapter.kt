@@ -1,36 +1,41 @@
 package com.example.rickandmortyapp.ui.home
 
+import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.rickandmortyapp.data.Item
-import com.example.rickandmortyapp.databinding.ItemHomeBinding
+import com.example.rickandmortyapp.databinding.ItemListHomeBinding
 
-class ItemListAdapter(private val onItemClicked : (Item) -> Unit):
-ListAdapter<Item, ItemListAdapter.ItemViewHolder>(DiffCallback){
-
+class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
+    ListAdapter<Item, ItemListAdapter.ItemViewHolder>(DiffCallback) {
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
-    ): ItemListAdapter.ItemViewHolder {
-        TODO("Not yet implemented")
+    ): ItemViewHolder {
+        return ItemViewHolder(
+            ItemListHomeBinding.inflate(
+                LayoutInflater.from(
+                    parent.context
+                )
+            )
+        )
     }
 
     override fun onBindViewHolder(holder: ItemListAdapter.ItemViewHolder, position: Int) {
-        TODO("Not yet implemented")
+        val current = getItem(position)
+        holder.itemView.setOnClickListener {
+            onItemClicked(current)
+        }
+        holder.bind(current)
     }
 
-    class ItemViewHolder(private var binding: ItemHomeBinding) :
+    class ItemViewHolder(private var binding: ItemListHomeBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: Item) {
-            /*
-            binding.itemName.text = item.itemName
-            binding.itemPrice.text = item.getFormattedPrice()
-            binding.itemQuantity.text = item.quantityInStock.toString()
-
-             */
+            binding.txtName.text = item.name
         }
     }
 
@@ -45,5 +50,4 @@ ListAdapter<Item, ItemListAdapter.ItemViewHolder>(DiffCallback){
             }
         }
     }
-
 }
