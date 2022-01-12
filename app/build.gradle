@@ -31,11 +31,9 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
-    viewBinding {
-        enabled = true
-    }
     buildFeatures {
         viewBinding true
+        dataBinding true
     }
 
 }
@@ -54,10 +52,6 @@ dependencies {
 
     // region Start Navigation
 
-    // Java language implementation
-    implementation("androidx.navigation:navigation-fragment-ktx:$nav_version")
-    implementation("androidx.navigation:navigation-ui-ktx:$nav_version")
-
     // Kotlin
     implementation("androidx.navigation:navigation-fragment-ktx:$nav_version")
     implementation("androidx.navigation:navigation-ui-ktx:$nav_version")
@@ -70,7 +64,6 @@ dependencies {
 
     // Jetpack Compose Integration
     implementation("androidx.navigation:navigation-compose:2.4.0-rc01")
-
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0")
 
     // endregion End navigation
@@ -82,5 +75,11 @@ dependencies {
 
     // Volley
     implementation 'com.android.volley:volley:1.2.1'
+
+    // region LiveData
+    implementation ("androidx.lifecycle:lifecycle-livedata-ktx:$livedata_version")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:$livedata_version")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-savedstate:$livedata_version")
+    // endregion LiveData
 
 }
