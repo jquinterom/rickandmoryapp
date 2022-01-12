@@ -9,7 +9,10 @@ data class Item(
     @PrimaryKey()
     val id: Int = 0,
     @ColumnInfo(name = "name")
-    val name: String
-
+    val name: String,
+    @ColumnInfo(name = "specie")
+    val specie: String,
+    @ColumnInfo(name = "image")
+    val image : String
 
 )

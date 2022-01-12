@@ -1,5 +1,6 @@
 package com.example.rickandmortyapp.ui.home
 
+import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -12,19 +13,29 @@ class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
-    ): ItemListAdapter.ItemViewHolder {
-        TODO("Not yet implemented")
+    ): ItemViewHolder {
+        return ItemViewHolder(
+            ItemListHomeBinding.inflate(
+                LayoutInflater.from(
+                    parent.context
+                )
+            )
+        )
     }
 
     override fun onBindViewHolder(holder: ItemListAdapter.ItemViewHolder, position: Int) {
-        TODO("Not yet implemented")
+        val current = getItem(position)
+        holder.itemView.setOnClickListener {
+            onItemClicked(current)
+        }
+        holder.bind(current)
     }
 
     class ItemViewHolder(private var binding: ItemListHomeBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: Item) {
-            binding.txtName.text = item.name.toString()
+            binding.txtName.text = item.name
         }
     }
 

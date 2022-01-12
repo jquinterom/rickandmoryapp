@@ -5,12 +5,14 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
+import com.example.rickandmortyapp.constants.Constants
+import com.example.rickandmortyapp.data.Item
 import com.example.rickandmortyapp.databinding.FragmentHomeBinding
 import com.example.rickandmortyapp.endPoints.EndPoint
 import com.example.rickandmortyapp.http.HttpSingleton
@@ -19,6 +21,7 @@ class HomeFragment : Fragment() {
 
     private lateinit var homeViewModel: HomeViewModel
     private var _binding: FragmentHomeBinding? = null
+    private val RESULTS = "results"
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -33,15 +36,14 @@ class HomeFragment : Fragment() {
             ViewModelProvider(this).get(HomeViewModel::class.java)
 
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        val root: View = binding.root
+        return binding.root
+    }
 
-        val textView: TextView = binding.textHome
-        homeViewModel.text.observe(viewLifecycleOwner, Observer {
-            textView.text = it
-        })
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         getData()
-        return root
     }
 
     override fun onDestroyView() {
@@ -49,14 +51,39 @@ class HomeFragment : Fragment() {
         _binding = null
     }
 
+    /**
+     * Get all data from characters
+     * */
     private fun getData(){
         val url = EndPoint.CHARACTERS
 
         val jsonObjectRequest = JsonObjectRequest(
             Request.Method.GET, url, null,
             { response ->
-                //textView.text = "Response: %s".format(response.toString())
-                Log.d("response", response.toString())
+                // Cargando la lista
+                val listItems = arrayListOf<Item>()
+
+                val results = response.getJSONArray(RESULTS)
+
+                results.let {
+                    0.until(it.length()).map {
+                        i -> it.optJSONObject(i)
+                    }
+                }.map {
+                    val item = Item(it.getInt(Constants.ID), it.getString(Constants.NAME), it.getString(Constants.SPECIE), it.getString(Constants.IMAGE))
+                    listItems.add(item)
+                }
+
+                val adapter = ItemListAdapter{
+                    val action = HomeFragmentDirections.actionNavHomeToDetailItemFragment()
+                    action.itemId = it.id
+                    this.findNavController().navigate(action)
+                }
+
+                binding.rvItems.layoutManager = LinearLayoutManager(this.context)
+                binding.rvItems.adapter = adapter
+
+                adapter.submitList(listItems)
             },
             { error ->
                 // TODO: Handle error
