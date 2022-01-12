@@ -5,4 +5,8 @@ object Constants {
     const val NAME = "name"
     const val SPECIE = "species"
     const val IMAGE = "image"
+
+
+    // Columns grid
+    const val COLUMNS_GRID = 2;
 }

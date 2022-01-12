@@ -5,4 +5,13 @@
     <dimen name="nav_header_vertical_spacing">8dp</dimen>
     <dimen name="nav_header_height">176dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
+
+    <!-- Custom dimens -->
+    <dimen name="padding_item_list">5dp</dimen>
+    <dimen name="margin_item_list">5dp</dimen>
+    <dimen name="text_name_item">25sp</dimen>
+    <dimen name="text_specie_item">14sp</dimen>
+
+    <!-- imgItem -->
+    <dimen name="max_width_img_item">105dp</dimen>
 </resources>
