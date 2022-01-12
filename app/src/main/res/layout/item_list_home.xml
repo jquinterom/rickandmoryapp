@@ -6,27 +6,66 @@
 
     </data>
 
-
-    <androidx.cardview.widget.CardView
-        android:id="@+id/cardView"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="@dimen/padding_item_list"
-        android:layout_marginBottom="@dimen/margin_item_list">
+        android:foregroundGravity="center">
 
-        <ImageView
-            android:id="@+id/imgItem"
-            android:layout_width="wrap_content"
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardView"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/ic_launcher_foreground" />
+            app:cardCornerRadius="4dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_margin="@dimen/margin_item_list">
 
-        <TextView
-            android:id="@+id/txtName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/app_name" />
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/padding_item_list">
 
-    </androidx.cardview.widget.CardView>
+                <ImageView
+                    android:id="@+id/imgItem"
+                    android:layout_width="@dimen/max_width_img_item"
+                    android:layout_height="@dimen/max_width_img_item"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginEnd="16dp"
+                    android:contentDescription="@string/app_name"
+                    android:src="@drawable/loading" />
+
+                <TextView
+                    android:id="@+id/txtName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_toEndOf="@+id/imgItem"
+                    android:layout_alignParentTop="true"
+                    android:textSize="@dimen/text_name_item"
+                    android:text="@string/app_name"/>
+
+                <TextView
+                    android:id="@+id/txtSpecie"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/txtName"
+                    android:layout_toEndOf="@+id/imgItem"
+                    android:text="@string/action_settings"
+                    android:textSize="@dimen/text_specie_item"/>
+            </RelativeLayout>
+
+            <ToggleButton
+                android:id="@+id/btnFavorite"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:textOn=""
+                android:textOff=""
+                android:layout_gravity="end|bottom"
+                android:background="@drawable/ic_grey_star"/>
+
+        </androidx.cardview.widget.CardView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </layout>

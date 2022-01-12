@@ -81,7 +81,7 @@ class HomeFragment : Fragment() {
                     this.findNavController().navigate(action)
                 }
 
-                binding.rvItems.layoutManager = GridLayoutManager(this.context, Constants.COLUMNS_GRID)
+                binding.rvItems.layoutManager = LinearLayoutManager(this.context)
                 binding.rvItems.adapter = adapter
                 adapter.submitList(listItems)
             },

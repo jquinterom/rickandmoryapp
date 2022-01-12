@@ -9,4 +9,9 @@
     <!-- Custom dimens -->
     <dimen name="padding_item_list">5dp</dimen>
     <dimen name="margin_item_list">5dp</dimen>
+    <dimen name="text_name_item">25sp</dimen>
+    <dimen name="text_specie_item">14sp</dimen>
+
+    <!-- imgItem -->
+    <dimen name="max_width_img_item">105dp</dimen>
 </resources>
