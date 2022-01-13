@@ -1,4 +1,4 @@
-package com.example.rickandmortyapp.ui.gallery
+package com.example.rickandmortyapp.ui.favorites
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,12 +8,11 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import com.example.rickandmortyapp.R
 import com.example.rickandmortyapp.databinding.FragmentGalleryBinding
 
-class GalleryFragment : Fragment() {
+class FavoritesFragment : Fragment() {
 
-    private lateinit var galleryViewModel: GalleryViewModel
+    private lateinit var favoritesViewModel: FavoritesViewModel
     private var _binding: FragmentGalleryBinding? = null
 
     // This property is only valid between onCreateView and
@@ -25,14 +24,14 @@ class GalleryFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        galleryViewModel =
-            ViewModelProvider(this).get(GalleryViewModel::class.java)
+        favoritesViewModel =
+            ViewModelProvider(this).get(FavoritesViewModel::class.java)
 
         _binding = FragmentGalleryBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
         val textView: TextView = binding.textGallery
-        galleryViewModel.text.observe(viewLifecycleOwner, Observer {
+        favoritesViewModel.text.observe(viewLifecycleOwner, Observer {
             textView.text = it
         })
         return root
