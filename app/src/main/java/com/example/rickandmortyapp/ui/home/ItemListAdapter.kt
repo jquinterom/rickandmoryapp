@@ -1,17 +1,13 @@
 package com.example.rickandmortyapp.ui.home
 
-import android.content.Context
 import android.graphics.Bitmap
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.android.volley.toolbox.ImageLoader
 import com.android.volley.toolbox.ImageRequest
-import com.example.rickandmortyapp.R
 import com.example.rickandmortyapp.data.Item
 import com.example.rickandmortyapp.databinding.ItemListHomeBinding
 import com.example.rickandmortyapp.http.HttpSingleton
@@ -33,21 +29,30 @@ class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
         )
     }
 
-    override fun onBindViewHolder(holder: ItemListAdapter.ItemViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         val current = getItem(position)
+
+        /*
         holder.itemView.setOnClickListener {
             onItemClicked(current)
         }
-        holder.bind(current)
+        */
+
+        holder.bind(current, onItemClicked)
     }
 
     class ItemViewHolder(private var binding: ItemListHomeBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: Item) {
+        fun bind(item: Item, onItemClicked: (Item) -> Unit) {
             try {
                 binding.txtName.text = item.name
                 binding.txtSpecie.text = item.specie
+
+                // Evento para agregar a favoritos
+                binding.btnFavorite.setOnClickListener {
+                    onItemClicked(item)
+                }
 
                 // Cargando imagen
                 val imageRequest = ImageRequest(
