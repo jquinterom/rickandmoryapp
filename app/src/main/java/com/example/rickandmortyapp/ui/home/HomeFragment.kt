@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.example.rickandmortyapp.constants.Constants
@@ -23,10 +24,17 @@ class HomeFragment : Fragment() {
     private lateinit var homeViewModel: HomeViewModel
     private var _binding: FragmentHomeBinding? = null
     private val RESULTS = "results"
+    private val PAGE_START = 1 // pagina iniciar
+    private var PAGE_CURRENT = 0 // pagina actual
+    private var PAGE_SIZE = 10 // maxima cantidad de items
+    private val PAGE_MODULE = 1 // para validar el modulo
+    private var PAGE_CURRENT_MODULE = 0 // Modulo que puede cambiar
 
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+
+    private val layoutManager =  LinearLayoutManager(this.context)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -44,6 +52,7 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Iniciar con 1
         getData()
     }
 
@@ -56,43 +65,79 @@ class HomeFragment : Fragment() {
      * Get all data from characters
      * */
     private fun getData(){
-        val url = EndPoint.CHARACTERS
+            val url = EndPoint.CHARACTERS + PAGE_CURRENT.toString()
 
-        val jsonObjectRequest = JsonObjectRequest(
-            Request.Method.GET, url, null,
-            { response ->
-                // Cargando la lista
-                val listItems = arrayListOf<Item>()
+            val jsonObjectRequest = JsonObjectRequest(
+                Request.Method.GET, url, null,
+                { response ->
+                    // Cargando la lista
+                    val listItems = arrayListOf<Item>()
+                    val results = response.getJSONArray(RESULTS)
 
-                val results = response.getJSONArray(RESULTS)
+                    Log.d("PAGE", PAGE_CURRENT.toString())
+                    Log.d("MODULE", PAGE_CURRENT_MODULE.toString())
 
-                results.let {
-                    0.until(it.length()).map {
-                        i -> it.optJSONObject(i)
+
+                    results.let {
+                        0.until(it.length()).map { i ->
+                            it.optJSONObject(i)
+                        }
+                    }.map {
+                        val item = Item(
+                            it.getInt(Constants.ID),
+                            it.getString(Constants.NAME),
+                            it.getString(Constants.SPECIE),
+                            it.getString(Constants.IMAGE)
+                        )
+                        listItems.add(item)
                     }
-                }.map {
-                    val item = Item(it.getInt(Constants.ID), it.getString(Constants.NAME), it.getString(Constants.SPECIE), it.getString(Constants.IMAGE))
-                    listItems.add(item)
+
+                    // Validar la carga de los 10 items
+
+                    val adapter = ItemListAdapter {
+                        val action = HomeFragmentDirections.actionNavHomeToDetailItemFragment()
+                        action.itemId = it.id
+                        this.findNavController().navigate(action)
+                    }
+
+                    binding.rvItems.layoutManager = layoutManager
+                    binding.rvItems.adapter = adapter
+                    adapter.submitList(listItems)
+
+                    setRecyclerViewScrollListener(layoutManager)
+                },
+                { error ->
+                    // TODO: Handle error
+                    Log.e("error", error.toString())
+                }
+            )
+
+            // Access the RequestQueue through your singleton class.
+            HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
+
+
+    }
+
+    // ScrollListener for recyclerview
+    private fun setRecyclerViewScrollListener(linearLayoutManager: LinearLayoutManager) {
+        binding.rvItems.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                val totalItemCount = recyclerView.layoutManager!!.itemCount
+
+                val lastVisibleItemPosition: Int = linearLayoutManager.findLastVisibleItemPosition()
+                val firstVisibleItemPosition: Int = linearLayoutManager.findFirstVisibleItemPosition()
+
+                if (totalItemCount == lastVisibleItemPosition + 1) {
+                    getData()
                 }
 
-                val adapter = ItemListAdapter{
-                    val action = HomeFragmentDirections.actionNavHomeToDetailItemFragment()
-                    action.itemId = it.id
-                    this.findNavController().navigate(action)
+                if(firstVisibleItemPosition == 0) {
+                    if(PAGE_CURRENT > PAGE_START) PAGE_CURRENT-=1
+                    getData()
                 }
-
-                binding.rvItems.layoutManager = LinearLayoutManager(this.context)
-                binding.rvItems.adapter = adapter
-                adapter.submitList(listItems)
-            },
-            { error ->
-                // TODO: Handle error
-                Log.e("error", error.toString())
             }
-        )
-
-        // Access the RequestQueue through your singleton class.
-        HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
-
+        })
     }
 }
