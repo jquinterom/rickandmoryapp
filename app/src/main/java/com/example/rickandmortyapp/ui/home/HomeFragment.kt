@@ -19,6 +19,8 @@ import com.example.rickandmortyapp.data.ItemRoomDatabase
 import com.example.rickandmortyapp.databinding.FragmentHomeBinding
 import com.example.rickandmortyapp.endPoints.EndPoint
 import com.example.rickandmortyapp.http.HttpSingleton
+import org.json.JSONArray
+import java.lang.Exception
 
 class HomeFragment : Fragment() {
 
@@ -39,19 +41,12 @@ class HomeFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
-
-
     private val RESULTS = "results"
-    private val PAGE_START = 1 // pagina iniciar
-    private var PAGE_CURRENT = 0 // pagina actual
-    private var PAGE_SIZE = 10 // maxima cantidad de items
-    private val PAGE_MODULE = 1 // para validar el modulo
-    private var PAGE_CURRENT_MODULE = 0 // Modulo que puede cambiar
-
-
-
+    private var PAGE_CURRENT = 1 // pagina actual
+    private var PAGE_SIZE = 9 // maxima cantidad de items
+    private var PAGE_CURRENT_MODULE = 1 // Modulo que puede cambiar
+    private var PAGE_RESULT: JSONArray? = null
     private val layoutManager =  LinearLayoutManager(this.context)
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,12 +57,11 @@ class HomeFragment : Fragment() {
         return binding.root
     }
 
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Iniciar con 1
-        getData()
+        // Iniciar con 0
+        getData(PAGE_CURRENT - 1)
     }
 
     override fun onDestroyView() {
@@ -78,21 +72,86 @@ class HomeFragment : Fragment() {
     /**
      * Get all data from characters
      * */
-    private fun getData(){
+    private fun getData(page : Int){
+        try {
+
+
+            // Validamos el modulo
+            if(PAGE_CURRENT_MODULE  == 1){
+                // Cargamos por primera vez
+            } else if(PAGE_CURRENT_MODULE == 2){
+                // Cargamos la segunda parte
+            } else if(PAGE_CURRENT_MODULE < 1){
+                // Cargamos pagina anterior con modulo = 2
+            } else if(PAGE_CURRENT_MODULE > 2){
+                // Cargamos siguiente pagina con modulo = 1
+            }
+
+
             val url = EndPoint.CHARACTERS + PAGE_CURRENT.toString()
+            // Cargando la lista
+            val listItems = arrayListOf<Item>()
 
-            val jsonObjectRequest = JsonObjectRequest(
-                Request.Method.GET, url, null,
-                { response ->
-                    // Cargando la lista
-                    val listItems = arrayListOf<Item>()
-                    val results = response.getJSONArray(RESULTS)
+            if (page != PAGE_CURRENT) {
+                val jsonObjectRequest = JsonObjectRequest(
+                    Request.Method.GET, url, null,
+                    { response ->
+                        PAGE_RESULT = response.getJSONArray(RESULTS)
 
-                    results.let {
-                        0.until(it.length()).map { i ->
-                            it.optJSONObject(i)
+                        if (PAGE_CURRENT_MODULE == 1) {
+                            // Primeros 10 registros de la página
+                            for (i in 0 until PAGE_SIZE) {
+                                val it = PAGE_RESULT!!.getJSONObject(i)
+
+                                val item = Item(
+                                    it.getInt(Constants.ID),
+                                    it.getString(Constants.NAME),
+                                    it.getString(Constants.SPECIE),
+                                    it.getString(Constants.IMAGE)
+                                )
+                                listItems.add(item)
+                            }
+                        } else {
+                            // Ultimos 10 registros de la pagina
+                            for (i in PAGE_SIZE until PAGE_RESULT!!.length() - 1) {
+                                val it = PAGE_RESULT!!.getJSONObject(i)
+
+                                val item = Item(
+                                    it.getInt(Constants.ID),
+                                    it.getString(Constants.NAME),
+                                    it.getString(Constants.SPECIE),
+                                    it.getString(Constants.IMAGE)
+                                )
+                                listItems.add(item)
+                            }
                         }
-                    }.map {
+
+                        // Validar la carga de los 10 items *****
+
+                        val adapter = ItemListAdapter {
+                            addNewItem(it)
+                        }
+
+                        binding.rvItems.layoutManager = layoutManager
+                        binding.rvItems.adapter = adapter
+                        adapter.submitList(listItems)
+
+                        setRecyclerViewScrollListener(layoutManager)
+                    },
+                    { error ->
+                        // TODO: Handle error
+                        Log.e("error", error.toString())
+                    }
+                )
+
+                // Access the RequestQueue through your singleton class.
+                HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
+            } else {
+                if (PAGE_CURRENT_MODULE == 1) {
+                    // Cargamos primera parte
+                    for (i in 0 until PAGE_RESULT!!.length()) {
+                        val it = PAGE_RESULT!!.getJSONObject(i)
+
                         val item = Item(
                             it.getInt(Constants.ID),
                             it.getString(Constants.NAME),
@@ -101,30 +160,37 @@ class HomeFragment : Fragment() {
                         )
                         listItems.add(item)
                     }
+                } else {
+                    // Cargamos segunda parte
+                    for (i in PAGE_SIZE..PAGE_RESULT!!.length()) {
+                        val it = PAGE_RESULT!!.getJSONObject(i)
 
-                    // Validar la carga de los 10 items *****
-
-                    val adapter = ItemListAdapter {
-                        addNewItem(it)
+                        val item = Item(
+                            it.getInt(Constants.ID),
+                            it.getString(Constants.NAME),
+                            it.getString(Constants.SPECIE),
+                            it.getString(Constants.IMAGE)
+                        )
+                        listItems.add(item)
                     }
-
-
-                    binding.rvItems.layoutManager = layoutManager
-                    binding.rvItems.adapter = adapter
-                    adapter.submitList(listItems)
-
-                    setRecyclerViewScrollListener(layoutManager)
-                },
-                { error ->
-                    // TODO: Handle error
-                    Log.e("error", error.toString())
                 }
-            )
 
-            // Access the RequestQueue through your singleton class.
-            HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
+                // Validar la carga de los 10 items *****
 
+                val adapter = ItemListAdapter {
+                    addNewItem(it)
+                }
 
+                binding.rvItems.layoutManager = layoutManager
+                binding.rvItems.adapter = adapter
+                adapter.submitList(listItems)
+
+                setRecyclerViewScrollListener(layoutManager)
+            }
+        } catch (e: Exception){
+            // Mostar mensaje amigable de no carga de datos
+            e.printStackTrace()
+        }
     }
 
     // ScrollListener for recyclerview
@@ -139,7 +205,8 @@ class HomeFragment : Fragment() {
                 val firstVisibleItemPosition: Int = linearLayoutManager.findFirstVisibleItemPosition()
 
                 if (totalItemCount == lastVisibleItemPosition + 1) {
-                    //getData()
+                    PAGE_CURRENT_MODULE +=1
+                    getData()
                 }
             }
         })
