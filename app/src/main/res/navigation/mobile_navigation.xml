@@ -10,9 +10,6 @@
         android:name="com.example.rickandmortyapp.ui.home.HomeFragment"
         android:label="@string/menu_home"
         tools:layout="@layout/fragment_home" >
-        <action
-            android:id="@+id/action_nav_home_to_detailItemFragment"
-            app:destination="@id/detailItemFragment" />
     </fragment>
 
     <fragment
@@ -26,14 +23,5 @@
         android:name="com.example.rickandmortyapp.ui.slideshow.SlideshowFragment"
         android:label="@string/menu_slideshow"
         tools:layout="@layout/fragment_slideshow" />
-    <fragment
-        android:id="@+id/detailItemFragment"
-        android:name="com.example.rickandmortyapp.ui.detailItem.DetailItemFragment"
-        android:label="fragment_detail_item"
-        tools:layout="@layout/fragment_detail_item" >
-        <argument
-            android:name="item_id"
-            app:argType="integer"
-            android:defaultValue="0" />
-    </fragment>
+
 </navigation>

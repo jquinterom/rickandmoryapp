@@ -58,6 +58,15 @@ class HomeViewModel(private val itemDao: ItemDao) : ViewModel() {
         val newItem = getNewItemEntry(id, itemName, itemPrice, itemCount)
         insertItem(newItem)
     }
+
+    /**
+     * Get [Item] database
+     * */
+    fun getItemById(id: Int){
+        viewModelScope.launch {
+            itemDao.getItem(id)
+        }
+    }
 }
 
 /**
