@@ -6,14 +6,27 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
-import com.example.rickandmortyapp.databinding.FragmentGalleryBinding
+import com.example.rickandmortyapp.data.ItemRoomDatabase
+import com.example.rickandmortyapp.databinding.FragmentFavoritesBinding
+import com.example.rickandmortyapp.ui.HomeViewModelFactory
+import com.example.rickandmortyapp.ui.ShareViewModel
 
 class FavoritesFragment : Fragment() {
 
-    private lateinit var favoritesViewModel: FavoritesViewModel
-    private var _binding: FragmentGalleryBinding? = null
+    // Instance database
+    private val database: ItemRoomDatabase by lazy { ItemRoomDatabase.getDatabase(requireActivity().applicationContext) }
+
+    // Use the 'by activityViewModels()' Kotlin property delegate from the fragment-ktx artifact
+    // to share the ViewModel across fragments.
+    private val shareViewModel: ShareViewModel by activityViewModels {
+        HomeViewModelFactory(
+            database.itemDao()
+        )
+    }
+
+    private var _binding: FragmentFavoritesBinding? = null
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -24,14 +37,11 @@ class FavoritesFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        favoritesViewModel =
-            ViewModelProvider(this).get(FavoritesViewModel::class.java)
-
-        _binding = FragmentGalleryBinding.inflate(inflater, container, false)
+        _binding = FragmentFavoritesBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
         val textView: TextView = binding.textGallery
-        favoritesViewModel.text.observe(viewLifecycleOwner, Observer {
+        shareViewModel.text.observe(viewLifecycleOwner, Observer {
             textView.text = it
         })
         return root
@@ -40,5 +50,12 @@ class FavoritesFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    /**
+     * Get data favorites
+     * */
+    private fun getData(){
+
     }
 }

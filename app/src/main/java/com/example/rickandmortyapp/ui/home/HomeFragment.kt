@@ -8,9 +8,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.example.rickandmortyapp.constants.Constants
@@ -19,6 +17,8 @@ import com.example.rickandmortyapp.data.ItemRoomDatabase
 import com.example.rickandmortyapp.databinding.FragmentHomeBinding
 import com.example.rickandmortyapp.endPoints.EndPoint
 import com.example.rickandmortyapp.http.HttpSingleton
+import com.example.rickandmortyapp.ui.HomeViewModelFactory
+import com.example.rickandmortyapp.ui.ShareViewModel
 import org.json.JSONArray
 import java.lang.Exception
 
@@ -29,7 +29,7 @@ class HomeFragment : Fragment() {
 
     // Use the 'by activityViewModels()' Kotlin property delegate from the fragment-ktx artifact
     // to share the ViewModel across fragments.
-    private val homeViewModel: HomeViewModel by activityViewModels {
+    private val shareViewModel: ShareViewModel by activityViewModels {
         HomeViewModelFactory(
             database.itemDao()
         )
@@ -247,7 +247,7 @@ class HomeFragment : Fragment() {
      * Returns true if the EditTexts are not empty
      */
     private fun isEntryValid(item: Item): Boolean {
-        return homeViewModel.isEntryValid(
+        return shareViewModel.isEntryValid(
             item.name,
             item.specie,
             item.image,
@@ -260,7 +260,7 @@ class HomeFragment : Fragment() {
     private fun addNewItem(item: Item) {
         isEntryValid(item)
         if (isEntryValid(item)) {
-            homeViewModel.addNewItem(
+            shareViewModel.addNewItem(
                 item.id,
                 item.name,
                 item.specie,
@@ -274,7 +274,7 @@ class HomeFragment : Fragment() {
      * Validate [Item] count and register
      */
     private fun registerItem(item: Item){
-        homeViewModel.allItems.observe(this.viewLifecycleOwner){
+        shareViewModel.allItems.observe(this.viewLifecycleOwner){
             items ->
             if(items.size < Constants.MAX_FAVORITES){
                 addNewItem(item)
