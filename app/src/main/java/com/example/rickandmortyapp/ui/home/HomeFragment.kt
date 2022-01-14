@@ -266,7 +266,7 @@ class HomeFragment : Fragment() {
                 item.specie,
                 item.image,
             )
-        Toast.makeText(binding.root.context, "Agregado a favoritos", Toast.LENGTH_LONG).show()
+        Toast.makeText(binding.root.context, "Agregado a favoritos", Toast.LENGTH_SHORT).show()
         }
     }
 
