@@ -31,13 +31,6 @@ class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         val current = getItem(position)
-
-        /*
-        holder.itemView.setOnClickListener {
-            onItemClicked(current)
-        }
-        */
-
         holder.bind(current, onItemClicked)
     }
 

@@ -1,11 +1,18 @@
-package com.example.rickandmortyapp.ui.home
+package com.example.rickandmortyapp.ui
 
 import androidx.lifecycle.*
 import com.example.rickandmortyapp.data.Item
 import com.example.rickandmortyapp.data.ItemDao
 import kotlinx.coroutines.launch
 
-class HomeViewModel(private val itemDao: ItemDao) : ViewModel() {
+class ShareViewModel(private val itemDao: ItemDao) : ViewModel() {
+
+
+    private val _text = MutableLiveData<String>().apply {
+        value = "Data not found"
+    }
+    val text: LiveData<String> = _text
+
 
     // Cache all items form the database using LiveData.
     // Get all favorite items
@@ -33,7 +40,7 @@ class HomeViewModel(private val itemDao: ItemDao) : ViewModel() {
      * Returns true if the EditTexts are not empty
      */
     fun isEntryValid(itemName: String, itemSpecie: String, itemImage: String): Boolean {
-        if (itemName.isBlank() || itemSpecie.isBlank() || itemSpecie.isBlank()) {
+        if (itemName.isBlank() || itemSpecie.isBlank() || itemImage.isBlank()) {
             return false
         }
         return true
@@ -58,6 +65,15 @@ class HomeViewModel(private val itemDao: ItemDao) : ViewModel() {
         val newItem = getNewItemEntry(id, itemName, itemPrice, itemCount)
         insertItem(newItem)
     }
+
+    /**
+     * Get [Item] database
+     * */
+    fun getItemById(id: Int){
+        viewModelScope.launch {
+            itemDao.getItem(id)
+        }
+    }
 }
 
 /**
@@ -65,9 +81,9 @@ class HomeViewModel(private val itemDao: ItemDao) : ViewModel() {
  */
 class HomeViewModelFactory(private val itemDao: ItemDao) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
+        if (modelClass.isAssignableFrom(ShareViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HomeViewModel(itemDao) as T
+            return ShareViewModel(itemDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
