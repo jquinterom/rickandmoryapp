@@ -9,4 +9,9 @@ object Constants {
 
     // Columns grid
     const val COLUMNS_GRID = 2;
+
+    const val MODULE_ONE = 1
+    const val MODULE_TWO = 2
+    const val MODULE_THREE = 3
+    const val MODULE_FOUR = 4
 }
