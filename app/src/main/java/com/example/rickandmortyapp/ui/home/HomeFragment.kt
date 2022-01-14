@@ -189,8 +189,6 @@ class HomeFragment : Fragment() {
                 binding.rvItems.layoutManager = layoutManager
                 binding.rvItems.adapter = adapter
                 adapter.submitList(listItems)
-
-                setRecyclerViewScrollListener(layoutManager)
             },
             { error ->
                 // TODO: Handle error
@@ -242,36 +240,8 @@ class HomeFragment : Fragment() {
         binding.rvItems.layoutManager = layoutManager
         binding.rvItems.adapter = adapter
         adapter.submitList(listItems)
-
-        setRecyclerViewScrollListener(layoutManager)
     }
     
-    
-
-
-    // ScrollListener for recyclerview
-    private fun setRecyclerViewScrollListener(linearLayoutManager: LinearLayoutManager) {
-        binding.rvItems.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                val totalItemCount = recyclerView.layoutManager!!.itemCount
-
-                val lastVisibleItemPosition: Int = linearLayoutManager.findLastVisibleItemPosition()
-                val firstVisibleItemPosition: Int = linearLayoutManager.findFirstVisibleItemPosition()
-
-                if (totalItemCount == lastVisibleItemPosition + 1) {
-                    PAGE_CURRENT_MODULE +=1
-                    getData()
-                }
-
-                if(firstVisibleItemPosition == 0){
-                    PAGE_CURRENT_MODULE -= 1
-                    getData()
-                }
-            }
-        })
-    }
 
     /**
      * Returns true if the EditTexts are not empty
