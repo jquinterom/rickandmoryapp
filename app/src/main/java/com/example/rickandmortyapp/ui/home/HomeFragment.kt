@@ -35,18 +35,19 @@ class HomeFragment : Fragment() {
         )
     }
 
-
     private var _binding: FragmentHomeBinding? = null
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
 
     private val RESULTS = "results"
-    private var PAGE_CURRENT = 1 // pagina actual
+    private var PAGE_CURRENT = 0 // pagina actual
+    private val PAGE_START = 1 // pagina actual
     private var PAGE_SIZE = 9 // maxima cantidad de items
     private var PAGE_CURRENT_MODULE = 1 // Modulo que puede cambiar
     private var PAGE_RESULT: JSONArray? = null
     private val layoutManager =  LinearLayoutManager(this.context)
+    private var listItems = arrayListOf<Item>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -61,7 +62,7 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // Iniciar con 0
-        getData(PAGE_CURRENT - 1)
+        getData()
     }
 
     override fun onDestroyView() {
@@ -70,86 +71,91 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * Get all data from characters
+     * Validar el modulo y pagina a cargar
      * */
-    private fun getData(page : Int){
-        try {
-
-
-            // Validamos el modulo
-            if(PAGE_CURRENT_MODULE  == 1){
+    private fun validateModule(): Int{
+        // Validamos el modulo
+        when {
+            PAGE_CURRENT_MODULE  == 1 -> {
                 // Cargamos por primera vez
-            } else if(PAGE_CURRENT_MODULE == 2){
+                return Constants.MODULE_ONE
+            }
+            PAGE_CURRENT_MODULE == 2 -> {
                 // Cargamos la segunda parte
-            } else if(PAGE_CURRENT_MODULE < 1){
+                return Constants.MODULE_TWO
+            }
+            PAGE_CURRENT_MODULE < 1 -> {
+                if(PAGE_CURRENT != PAGE_START ) PAGE_CURRENT -=1
+                PAGE_CURRENT_MODULE = 2
+                return Constants.MODULE_THREE
+
                 // Cargamos pagina anterior con modulo = 2
-            } else if(PAGE_CURRENT_MODULE > 2){
+            }
+            PAGE_CURRENT_MODULE > 2 -> {
+                PAGE_CURRENT += 1
+                PAGE_CURRENT_MODULE = 1
+                return Constants.MODULE_FOUR
+
                 // Cargamos siguiente pagina con modulo = 1
             }
+            else -> {
+                return  -1
+            }
+        }
+    }
 
-
-            val url = EndPoint.CHARACTERS + PAGE_CURRENT.toString()
-            // Cargando la lista
-            val listItems = arrayListOf<Item>()
-
-            if (page != PAGE_CURRENT) {
-                val jsonObjectRequest = JsonObjectRequest(
-                    Request.Method.GET, url, null,
-                    { response ->
-                        PAGE_RESULT = response.getJSONArray(RESULTS)
-
-                        if (PAGE_CURRENT_MODULE == 1) {
-                            // Primeros 10 registros de la página
-                            for (i in 0 until PAGE_SIZE) {
-                                val it = PAGE_RESULT!!.getJSONObject(i)
-
-                                val item = Item(
-                                    it.getInt(Constants.ID),
-                                    it.getString(Constants.NAME),
-                                    it.getString(Constants.SPECIE),
-                                    it.getString(Constants.IMAGE)
-                                )
-                                listItems.add(item)
-                            }
+    /**
+     * Get all data from characters
+     * */
+    private fun getData(){
+        try {
+            // Validar el modulo y pagina a cargar
+            val module = validateModule()
+            if (PAGE_CURRENT != PAGE_START) { // Pagina inicial
+                when (module) {
+                    Constants.MODULE_ONE -> {
+                        if(PAGE_CURRENT == 0){
+                            // peticion a la API
+                            getDataApi()
+                            PAGE_CURRENT += PAGE_START
                         } else {
-                            // Ultimos 10 registros de la pagina
-                            for (i in PAGE_SIZE until PAGE_RESULT!!.length() - 1) {
-                                val it = PAGE_RESULT!!.getJSONObject(i)
-
-                                val item = Item(
-                                    it.getInt(Constants.ID),
-                                    it.getString(Constants.NAME),
-                                    it.getString(Constants.SPECIE),
-                                    it.getString(Constants.IMAGE)
-                                )
-                                listItems.add(item)
-                            }
+                            // Carga de lista ya existente
+                            getDataLocal()
                         }
-
-                        // Validar la carga de los 10 items *****
-
-                        val adapter = ItemListAdapter {
-                            addNewItem(it)
-                        }
-
-                        binding.rvItems.layoutManager = layoutManager
-                        binding.rvItems.adapter = adapter
-                        adapter.submitList(listItems)
-
-                        setRecyclerViewScrollListener(layoutManager)
-                    },
-                    { error ->
-                        // TODO: Handle error
-                        Log.e("error", error.toString())
                     }
-                )
+                    Constants.MODULE_TWO -> {
+                        // Carga de lista ya existente
+                        getDataLocal()
+                    }
+                    Constants.MODULE_THREE, Constants.MODULE_FOUR -> {
+                        // peticion a la api y se carga la segunda parte
+                        getDataApi()
+                    }
+                }
+            }
+        } catch (e: Exception){
+            // Mostar mensaje amigable de no carga de datos
+            e.printStackTrace()
+        }
+    }
 
-                // Access the RequestQueue through your singleton class.
-                HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
-            } else {
+    /**
+     * Realizar peticion a la API
+     * */
+    private fun getDataApi(){
+        var url = EndPoint.CHARACTERS + PAGE_CURRENT.toString()
+        if(PAGE_CURRENT == 0){ // Cargar pagina 1
+            url = EndPoint.CHARACTERS + PAGE_START.toString()
+        }
+
+        val jsonObjectRequest = JsonObjectRequest(
+            Request.Method.GET, url, null,
+            { response ->
+                PAGE_RESULT = response.getJSONArray(RESULTS)
+
                 if (PAGE_CURRENT_MODULE == 1) {
-                    // Cargamos primera parte
-                    for (i in 0 until PAGE_RESULT!!.length()) {
+                    // Primeros 10 registros de la página
+                    for (i in 0 until PAGE_SIZE) {
                         val it = PAGE_RESULT!!.getJSONObject(i)
 
                         val item = Item(
@@ -161,8 +167,8 @@ class HomeFragment : Fragment() {
                         listItems.add(item)
                     }
                 } else {
-                    // Cargamos segunda parte
-                    for (i in PAGE_SIZE..PAGE_RESULT!!.length()) {
+                    // Ultimos 10 registros de la pagina
+                    for (i in PAGE_SIZE until PAGE_RESULT!!.length() - 1) {
                         val it = PAGE_RESULT!!.getJSONObject(i)
 
                         val item = Item(
@@ -176,7 +182,6 @@ class HomeFragment : Fragment() {
                 }
 
                 // Validar la carga de los 10 items *****
-
                 val adapter = ItemListAdapter {
                     addNewItem(it)
                 }
@@ -186,12 +191,63 @@ class HomeFragment : Fragment() {
                 adapter.submitList(listItems)
 
                 setRecyclerViewScrollListener(layoutManager)
+            },
+            { error ->
+                // TODO: Handle error
+                Log.e("error", error.toString())
             }
-        } catch (e: Exception){
-            // Mostar mensaje amigable de no carga de datos
-            e.printStackTrace()
-        }
+        )
+        // Access the RequestQueue through your singleton class.
+        HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
     }
+
+    /**
+     * Obtener la información de la variable local
+     * */
+    private fun getDataLocal(){
+        if (PAGE_CURRENT_MODULE == 1) {
+            // Primeros 10 registros de la página
+            for (i in 0 until PAGE_SIZE) {
+                val it = PAGE_RESULT!!.getJSONObject(i)
+
+                val item = Item(
+                    it.getInt(Constants.ID),
+                    it.getString(Constants.NAME),
+                    it.getString(Constants.SPECIE),
+                    it.getString(Constants.IMAGE)
+                )
+                listItems.add(item)
+            }
+        } else {
+            // Ultimos 10 registros de la pagina
+            for (i in PAGE_SIZE until PAGE_RESULT!!.length() - 1) {
+                val it = PAGE_RESULT!!.getJSONObject(i)
+
+                val item = Item(
+                    it.getInt(Constants.ID),
+                    it.getString(Constants.NAME),
+                    it.getString(Constants.SPECIE),
+                    it.getString(Constants.IMAGE)
+                )
+                listItems.add(item)
+            }
+        }
+
+
+        // Validar la carga de los 10 items *****
+        val adapter = ItemListAdapter {
+            addNewItem(it)
+        }
+
+        binding.rvItems.layoutManager = layoutManager
+        binding.rvItems.adapter = adapter
+        adapter.submitList(listItems)
+
+        setRecyclerViewScrollListener(layoutManager)
+    }
+    
+    
+
 
     // ScrollListener for recyclerview
     private fun setRecyclerViewScrollListener(linearLayoutManager: LinearLayoutManager) {
@@ -206,6 +262,11 @@ class HomeFragment : Fragment() {
 
                 if (totalItemCount == lastVisibleItemPosition + 1) {
                     PAGE_CURRENT_MODULE +=1
+                    getData()
+                }
+
+                if(firstVisibleItemPosition == 0){
+                    PAGE_CURRENT_MODULE -= 1
                     getData()
                 }
             }
