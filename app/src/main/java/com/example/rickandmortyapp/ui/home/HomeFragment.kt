@@ -19,6 +19,8 @@ import com.example.rickandmortyapp.data.ItemRoomDatabase
 import com.example.rickandmortyapp.databinding.FragmentHomeBinding
 import com.example.rickandmortyapp.endPoints.EndPoint
 import com.example.rickandmortyapp.http.HttpSingleton
+import org.json.JSONArray
+import java.lang.Exception
 
 class HomeFragment : Fragment() {
 
@@ -33,25 +35,19 @@ class HomeFragment : Fragment() {
         )
     }
 
-
     private var _binding: FragmentHomeBinding? = null
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
 
-
-
     private val RESULTS = "results"
-    private val PAGE_START = 1 // pagina iniciar
     private var PAGE_CURRENT = 0 // pagina actual
-    private var PAGE_SIZE = 10 // maxima cantidad de items
-    private val PAGE_MODULE = 1 // para validar el modulo
-    private var PAGE_CURRENT_MODULE = 0 // Modulo que puede cambiar
-
-
-
+    private val PAGE_START = 1 // pagina actual
+    private var PAGE_SIZE = 9 // maxima cantidad de items
+    private var PAGE_CURRENT_MODULE = 1 // Modulo que puede cambiar
+    private var PAGE_RESULT: JSONArray? = null
     private val layoutManager =  LinearLayoutManager(this.context)
-
+    private var listItems = arrayListOf<Item>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,11 +58,10 @@ class HomeFragment : Fragment() {
         return binding.root
     }
 
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Iniciar con 1
+        // Iniciar con 0
         getData()
     }
 
@@ -76,23 +71,93 @@ class HomeFragment : Fragment() {
     }
 
     /**
+     * Validar el modulo y pagina a cargar
+     * */
+    private fun validateModule(): Int{
+        // Validamos el modulo
+        when {
+            PAGE_CURRENT_MODULE  == 1 -> {
+                // Cargamos por primera vez
+                return Constants.MODULE_ONE
+            }
+            PAGE_CURRENT_MODULE == 2 -> {
+                // Cargamos la segunda parte
+                return Constants.MODULE_TWO
+            }
+            PAGE_CURRENT_MODULE < 1 -> {
+                if(PAGE_CURRENT != PAGE_START ) PAGE_CURRENT -=1
+                PAGE_CURRENT_MODULE = 2
+                return Constants.MODULE_THREE
+
+                // Cargamos pagina anterior con modulo = 2
+            }
+            PAGE_CURRENT_MODULE > 2 -> {
+                PAGE_CURRENT += 1
+                PAGE_CURRENT_MODULE = 1
+                return Constants.MODULE_FOUR
+
+                // Cargamos siguiente pagina con modulo = 1
+            }
+            else -> {
+                return  -1
+            }
+        }
+    }
+
+    /**
      * Get all data from characters
      * */
     private fun getData(){
-            val url = EndPoint.CHARACTERS + PAGE_CURRENT.toString()
-
-            val jsonObjectRequest = JsonObjectRequest(
-                Request.Method.GET, url, null,
-                { response ->
-                    // Cargando la lista
-                    val listItems = arrayListOf<Item>()
-                    val results = response.getJSONArray(RESULTS)
-
-                    results.let {
-                        0.until(it.length()).map { i ->
-                            it.optJSONObject(i)
+        try {
+            // Validar el modulo y pagina a cargar
+            val module = validateModule()
+            if (PAGE_CURRENT != PAGE_START) { // Pagina inicial
+                when (module) {
+                    Constants.MODULE_ONE -> {
+                        if(PAGE_CURRENT == 0){
+                            // peticion a la API
+                            getDataApi()
+                            PAGE_CURRENT += PAGE_START
+                        } else {
+                            // Carga de lista ya existente
+                            getDataLocal()
                         }
-                    }.map {
+                    }
+                    Constants.MODULE_TWO -> {
+                        // Carga de lista ya existente
+                        getDataLocal()
+                    }
+                    Constants.MODULE_THREE, Constants.MODULE_FOUR -> {
+                        // peticion a la api y se carga la segunda parte
+                        getDataApi()
+                    }
+                }
+            }
+        } catch (e: Exception){
+            // Mostar mensaje amigable de no carga de datos
+            e.printStackTrace()
+        }
+    }
+
+    /**
+     * Realizar peticion a la API
+     * */
+    private fun getDataApi(){
+        var url = EndPoint.CHARACTERS + PAGE_CURRENT.toString()
+        if(PAGE_CURRENT == 0){ // Cargar pagina 1
+            url = EndPoint.CHARACTERS + PAGE_START.toString()
+        }
+
+        val jsonObjectRequest = JsonObjectRequest(
+            Request.Method.GET, url, null,
+            { response ->
+                PAGE_RESULT = response.getJSONArray(RESULTS)
+
+                if (PAGE_CURRENT_MODULE == 1) {
+                    // Primeros 10 registros de la página
+                    for (i in 0 until PAGE_SIZE) {
+                        val it = PAGE_RESULT!!.getJSONObject(i)
+
                         val item = Item(
                             it.getInt(Constants.ID),
                             it.getString(Constants.NAME),
@@ -101,49 +166,82 @@ class HomeFragment : Fragment() {
                         )
                         listItems.add(item)
                     }
+                } else {
+                    // Ultimos 10 registros de la pagina
+                    for (i in PAGE_SIZE until PAGE_RESULT!!.length() - 1) {
+                        val it = PAGE_RESULT!!.getJSONObject(i)
 
-                    // Validar la carga de los 10 items *****
-
-                    val adapter = ItemListAdapter {
-                        addNewItem(it)
+                        val item = Item(
+                            it.getInt(Constants.ID),
+                            it.getString(Constants.NAME),
+                            it.getString(Constants.SPECIE),
+                            it.getString(Constants.IMAGE)
+                        )
+                        listItems.add(item)
                     }
-
-
-                    binding.rvItems.layoutManager = layoutManager
-                    binding.rvItems.adapter = adapter
-                    adapter.submitList(listItems)
-
-                    setRecyclerViewScrollListener(layoutManager)
-                },
-                { error ->
-                    // TODO: Handle error
-                    Log.e("error", error.toString())
                 }
-            )
 
-            // Access the RequestQueue through your singleton class.
-            HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
-
-
-    }
-
-    // ScrollListener for recyclerview
-    private fun setRecyclerViewScrollListener(linearLayoutManager: LinearLayoutManager) {
-        binding.rvItems.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                val totalItemCount = recyclerView.layoutManager!!.itemCount
-
-                val lastVisibleItemPosition: Int = linearLayoutManager.findLastVisibleItemPosition()
-                val firstVisibleItemPosition: Int = linearLayoutManager.findFirstVisibleItemPosition()
-
-                if (totalItemCount == lastVisibleItemPosition + 1) {
-                    //getData()
+                // Validar la carga de los 10 items *****
+                val adapter = ItemListAdapter {
+                    addNewItem(it)
                 }
+
+                binding.rvItems.layoutManager = layoutManager
+                binding.rvItems.adapter = adapter
+                adapter.submitList(listItems)
+            },
+            { error ->
+                // TODO: Handle error
+                Log.e("error", error.toString())
             }
-        })
+        )
+        // Access the RequestQueue through your singleton class.
+        HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
     }
+
+    /**
+     * Obtener la información de la variable local
+     * */
+    private fun getDataLocal(){
+        if (PAGE_CURRENT_MODULE == 1) {
+            // Primeros 10 registros de la página
+            for (i in 0 until PAGE_SIZE) {
+                val it = PAGE_RESULT!!.getJSONObject(i)
+
+                val item = Item(
+                    it.getInt(Constants.ID),
+                    it.getString(Constants.NAME),
+                    it.getString(Constants.SPECIE),
+                    it.getString(Constants.IMAGE)
+                )
+                listItems.add(item)
+            }
+        } else {
+            // Ultimos 10 registros de la pagina
+            for (i in PAGE_SIZE until PAGE_RESULT!!.length() - 1) {
+                val it = PAGE_RESULT!!.getJSONObject(i)
+
+                val item = Item(
+                    it.getInt(Constants.ID),
+                    it.getString(Constants.NAME),
+                    it.getString(Constants.SPECIE),
+                    it.getString(Constants.IMAGE)
+                )
+                listItems.add(item)
+            }
+        }
+
+
+        // Validar la carga de los 10 items *****
+        val adapter = ItemListAdapter {
+            addNewItem(it)
+        }
+
+        binding.rvItems.layoutManager = layoutManager
+        binding.rvItems.adapter = adapter
+        adapter.submitList(listItems)
+    }
+    
 
     /**
      * Returns true if the EditTexts are not empty
