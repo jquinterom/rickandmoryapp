@@ -183,7 +183,7 @@ class HomeFragment : Fragment() {
 
                 // Validar la carga de los 10 items *****
                 val adapter = ItemListAdapter {
-                    addNewItem(it)
+                    registerItem(it)
                 }
 
                 binding.rvItems.layoutManager = layoutManager
@@ -267,6 +267,20 @@ class HomeFragment : Fragment() {
                 item.image,
             )
         Toast.makeText(binding.root.context, "Registrado", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /**
+     * Validate [Item] count and register
+     */
+    private fun registerItem(item: Item){
+        homeViewModel.allItems.observe(this.viewLifecycleOwner){
+            items ->
+            if(items.size < Constants.MAX_FAVORITES){
+                addNewItem(item)
+            } else {
+                Toast.makeText(binding.root.context, "Limite de favoritos alcanzado", Toast.LENGTH_LONG).show()
+            }
         }
     }
 }

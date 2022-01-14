@@ -33,7 +33,7 @@ class HomeViewModel(private val itemDao: ItemDao) : ViewModel() {
      * Returns true if the EditTexts are not empty
      */
     fun isEntryValid(itemName: String, itemSpecie: String, itemImage: String): Boolean {
-        if (itemName.isBlank() || itemSpecie.isBlank() || itemSpecie.isBlank()) {
+        if (itemName.isBlank() || itemSpecie.isBlank() || itemImage.isBlank()) {
             return false
         }
         return true
