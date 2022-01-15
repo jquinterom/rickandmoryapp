@@ -301,8 +301,6 @@ class HomeFragment : Fragment() {
             }
         }
 
-
-        // Validar la carga de los 10 items *****
         val adapter = ItemListAdapter {
             addNewItem(it)
         }
