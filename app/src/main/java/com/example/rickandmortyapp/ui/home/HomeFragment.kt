@@ -36,6 +36,7 @@ class HomeFragment : Fragment() {
     }
 
     private var _binding: FragmentHomeBinding? = null
+
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
@@ -46,7 +47,7 @@ class HomeFragment : Fragment() {
     private var pageSize = 9 // maxima cantidad de items
     private var pageCurrentModule = 1 // Modulo que puede cambiar
     private var pageResult: JSONArray? = null
-    private val layoutManager =  LinearLayoutManager(this.context)
+    private val layoutManager = LinearLayoutManager(this.context)
     private var listItems = arrayListOf<Item>()
     private var listItemsFavorites = mutableListOf<Item>()
 
@@ -86,10 +87,10 @@ class HomeFragment : Fragment() {
     /**
      * Validar el modulo y pagina a cargar
      * */
-    private fun validateModule(): Int{
+    private fun validateModule(): Int {
         // Validamos el modulo
         when {
-            pageCurrentModule  == 1 -> {
+            pageCurrentModule == 1 -> {
                 // Cargamos por primera vez
                 return Constants.MODULE_ONE
             }
@@ -98,7 +99,7 @@ class HomeFragment : Fragment() {
                 return Constants.MODULE_TWO
             }
             pageCurrentModule < 1 -> {
-                if(pageCurrent != pageStart ) pageCurrent -=1
+                if (pageCurrent != pageStart) pageCurrent -= 1
                 pageCurrentModule = 2
                 return Constants.MODULE_THREE
 
@@ -112,7 +113,7 @@ class HomeFragment : Fragment() {
                 // Cargamos siguiente pagina con modulo = 1
             }
             else -> {
-                return  -1
+                return -1
             }
         }
     }
@@ -120,7 +121,7 @@ class HomeFragment : Fragment() {
     /**
      * Get all data from characters
      * */
-    private fun getData(){
+    private fun getData() {
         binding.pBar.visibility = View.VISIBLE
         try {
             // Validar el modulo y pagina a cargar
@@ -128,7 +129,7 @@ class HomeFragment : Fragment() {
             if (pageCurrent != pageStart) { // Pagina inicial
                 when (module) {
                     Constants.MODULE_ONE -> {
-                        if(pageCurrent == 0){
+                        if (pageCurrent == 0) {
                             // peticion a la API
                             getDataApi()
                             pageCurrent += pageStart
@@ -148,7 +149,7 @@ class HomeFragment : Fragment() {
                 }
             }
             binding.pBar.visibility = View.GONE
-        } catch (e: Exception){
+        } catch (e: Exception) {
             // Mostar mensaje amigable de no carga de datos
             e.printStackTrace()
             binding.pBar.visibility = View.GONE
@@ -158,9 +159,9 @@ class HomeFragment : Fragment() {
     /**
      * Realizar peticion a la API
      * */
-    private fun getDataApi(){
+    private fun getDataApi() {
         var url = EndPoint.CHARACTERS + pageCurrent.toString()
-        if(pageCurrent == 0){ // Cargar pagina 1
+        if (pageCurrent == 0) { // Cargar pagina 1
             url = EndPoint.CHARACTERS + pageStart.toString()
         }
 
@@ -181,7 +182,7 @@ class HomeFragment : Fragment() {
                             it.getString(Constants.IMAGE)
                         )
                         listItemsFavorites.map {
-                            if(it.id == item.id){
+                            if (it.id == item.id) {
                                 item.favorite = Constants.ITEM_FAVORITE
                             }
                         }
@@ -200,7 +201,7 @@ class HomeFragment : Fragment() {
                             it.getString(Constants.IMAGE)
                         )
                         listItemsFavorites.map {
-                            if(it.id == item.id){
+                            if (it.id == item.id) {
                                 item.favorite = Constants.ITEM_FAVORITE
                             }
                         }
@@ -230,7 +231,7 @@ class HomeFragment : Fragment() {
     /**
      * Obtener información con el buscador
      * */
-    private fun getDataApiSearch(parameter: String){
+    private fun getDataApiSearch(parameter: String) {
         binding.pBar.visibility = View.VISIBLE
         binding.textHome.visibility = View.GONE
 
@@ -263,7 +264,7 @@ class HomeFragment : Fragment() {
                         )
 
                         listItemsFavorites.map {
-                            if(it.id == item.id){
+                            if (it.id == item.id) {
                                 item.favorite = Constants.ITEM_FAVORITE
                             }
                         }
@@ -294,7 +295,7 @@ class HomeFragment : Fragment() {
 
             // Access the RequestQueue through your singleton class.
             HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
-        }  catch (e: Exception){
+        } catch (e: Exception) {
             binding.textHome.visibility = View.VISIBLE
             e.printStackTrace()
         }
@@ -303,19 +304,20 @@ class HomeFragment : Fragment() {
     /**
      * Obtener la información de la variable local
      * */
-    private fun getDataLocal(){
+    private fun getDataLocal() {
         if (pageCurrentModule == 1) {
             // Primeros 10 registros de la página
             for (i in 0 until pageSize) {
                 val it = pageResult!!.getJSONObject(i)
 
-                val item = shareViewModel.getNewItemEntry(it.getInt(Constants.ID),
+                val item = shareViewModel.getNewItemEntry(
+                    it.getInt(Constants.ID),
                     it.getString(Constants.NAME),
                     it.getString(Constants.SPECIE),
                     it.getString(Constants.IMAGE)
                 )
                 listItemsFavorites.map {
-                    if(it.id == item.id){
+                    if (it.id == item.id) {
                         item.favorite = Constants.ITEM_FAVORITE
                     }
                 }
@@ -326,14 +328,15 @@ class HomeFragment : Fragment() {
             for (i in pageSize until pageResult!!.length() - 1) {
                 val it = pageResult!!.getJSONObject(i)
 
-                val item = shareViewModel.getNewItemEntry(it.getInt(Constants.ID),
+                val item = shareViewModel.getNewItemEntry(
+                    it.getInt(Constants.ID),
                     it.getString(Constants.NAME),
                     it.getString(Constants.SPECIE),
                     it.getString(Constants.IMAGE)
                 )
 
                 listItemsFavorites.map {
-                    if(it.id == item.id){
+                    if (it.id == item.id) {
                         item.favorite = Constants.ITEM_FAVORITE
                     }
                 }
@@ -349,7 +352,7 @@ class HomeFragment : Fragment() {
         binding.rvItems.adapter = adapter
         adapter.submitList(listItems)
     }
-    
+
 
     /**
      * Returns true if the EditTexts are not empty
@@ -375,20 +378,23 @@ class HomeFragment : Fragment() {
                 item.image,
                 Constants.ITEM_FAVORITE
             )
-        Toast.makeText(binding.root.context, "Agregado a favoritos", Toast.LENGTH_SHORT).show()
+            Toast.makeText(binding.root.context, "Agregado a favoritos", Toast.LENGTH_SHORT).show()
         }
     }
 
     /**
      * Validate [Item] count and register
      */
-    private fun registerItem(item: Item){
-        shareViewModel.allItems.observe(this.viewLifecycleOwner){
-            items ->
-            if(items.size < Constants.MAX_FAVORITES){
+    private fun registerItem(item: Item) {
+        shareViewModel.allItems.observe(this.viewLifecycleOwner) { items ->
+            if (items.size < Constants.MAX_FAVORITES) {
                 addNewItem(item)
             } else {
-                Toast.makeText(binding.root.context, "Limite de favoritos alcanzado", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    binding.root.context,
+                    "Limite de favoritos alcanzado",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
@@ -405,12 +411,13 @@ class HomeFragment : Fragment() {
         val searchView = search.actionView as SearchView
         searchView.queryHint = "Search"
 
-        searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 // Obtener datos del API
                 getDataApiSearch(query.toString())
                 return false
             }
+
             override fun onQueryTextChange(newText: String?): Boolean {
                 return true
             }
