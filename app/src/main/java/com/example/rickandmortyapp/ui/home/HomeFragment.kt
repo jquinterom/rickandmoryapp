@@ -228,8 +228,8 @@ class HomeFragment : Fragment() {
 
                 PAGE_RESULT = response.getJSONArray(RESULTS)
 
-                // Solo los 10 primeros registros de la pagina
-                for (i in 0 until PAGE_RESULT!!.length() - 1) {
+                // Solo los 10 primeros registros de la página
+                for (i in 0 until PAGE_SIZE) {
                     val it = PAGE_RESULT!!.getJSONObject(i)
 
                     val item = Item(
