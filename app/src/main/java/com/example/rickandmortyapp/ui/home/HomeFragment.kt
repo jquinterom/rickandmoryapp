@@ -1,5 +1,6 @@
 package com.example.rickandmortyapp.ui.home
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -8,6 +9,8 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.example.rickandmortyapp.R
@@ -45,11 +48,17 @@ class HomeFragment : Fragment() {
     private var pageCurrent = 0 // pagina actual
     private val pageStart = 1 // pagina actual
     private var pageSize = 9 // maxima cantidad de items
-    private var pageCurrentModule = 1 // Modulo que puede cambiar
     private var pageResult: JSONArray? = null
     private val layoutManager = LinearLayoutManager(this.context)
     private var listItems = arrayListOf<Item>()
     private var listItemsFavorites = mutableListOf<Item>()
+
+    // Validar la carga de los 10 items *****
+    private val adapter = ItemListAdapter {
+        registerItem(it)
+    }
+
+
 
 
     override fun onCreateView(
@@ -68,6 +77,11 @@ class HomeFragment : Fragment() {
 
         }
 
+        binding.rvItems.layoutManager = layoutManager
+        binding.rvItems.adapter = adapter
+        adapter.submitList(listItems)
+
+        pagination()
 
         return binding.root
     }
@@ -85,147 +99,54 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * Validar el modulo y pagina a cargar
-     * */
-    private fun validateModule(): Int {
-        // Validamos el modulo
-        when {
-            pageCurrentModule == 1 -> {
-                // Cargamos por primera vez
-                return Constants.MODULE_ONE
-            }
-            pageCurrentModule == 2 -> {
-                // Cargamos la segunda parte
-                return Constants.MODULE_TWO
-            }
-            pageCurrentModule < 1 -> {
-                if (pageCurrent != pageStart) pageCurrent -= 1
-                pageCurrentModule = 2
-                return Constants.MODULE_THREE
-
-                // Cargamos pagina anterior con modulo = 2
-            }
-            pageCurrentModule > 2 -> {
-                pageCurrent += 1
-                pageCurrentModule = 1
-                return Constants.MODULE_FOUR
-
-                // Cargamos siguiente pagina con modulo = 1
-            }
-            else -> {
-                return -1
-            }
-        }
-    }
-
-    /**
      * Get all data from characters
      * */
+    @SuppressLint("NotifyDataSetChanged")
     private fun getData() {
         binding.pBar.visibility = View.VISIBLE
         try {
-            // Validar el modulo y pagina a cargar
-            val module = validateModule()
-            if (pageCurrent != pageStart) { // Pagina inicial
-                when (module) {
-                    Constants.MODULE_ONE -> {
-                        if (pageCurrent == 0) {
-                            // peticion a la API
-                            getDataApi()
-                            pageCurrent += pageStart
-                        } else {
-                            // Carga de lista ya existente
-                            getDataLocal()
-                        }
-                    }
-                    Constants.MODULE_TWO -> {
-                        // Carga de lista ya existente
-                        getDataLocal()
-                    }
-                    Constants.MODULE_THREE, Constants.MODULE_FOUR -> {
-                        // peticion a la api y se carga la segunda parte
-                        getDataApi()
-                    }
-                }
+            var url = EndPoint.CHARACTERS + pageCurrent.toString()
+            if (pageCurrent == 0) { // Cargar pagina 1
+                url = EndPoint.CHARACTERS + pageStart.toString()
             }
+
+            val jsonObjectRequest = JsonObjectRequest(
+                Request.Method.GET, url, null,
+                { response ->
+                    pageResult = response.getJSONArray(results)
+
+                    // Primeros 10 registros de la página
+                    for (i in 0 until pageResult!!.length() -1) {
+                        val it = pageResult!!.getJSONObject(i)
+
+                        val item = Item(
+                            it.getInt(Constants.ID),
+                            it.getString(Constants.NAME),
+                            it.getString(Constants.SPECIE),
+                            it.getString(Constants.IMAGE)
+                        )
+                        listItemsFavorites.map {
+                            if (it.id == item.id) {
+                                item.favorite = Constants.ITEM_FAVORITE
+                            }
+                        }
+                        listItems.add(item)
+                    }
+                    adapter.notifyDataSetChanged()
+                },
+                { error ->
+                    // TODO: Handle error
+                    Log.e("error", error.toString())
+                }
+            )
+            // Access the RequestQueue through your singleton class.
+            HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
             binding.pBar.visibility = View.GONE
         } catch (e: Exception) {
             // Mostar mensaje amigable de no carga de datos
             e.printStackTrace()
             binding.pBar.visibility = View.GONE
         }
-    }
-
-    /**
-     * Realizar peticion a la API
-     * */
-    private fun getDataApi() {
-        var url = EndPoint.CHARACTERS + pageCurrent.toString()
-        if (pageCurrent == 0) { // Cargar pagina 1
-            url = EndPoint.CHARACTERS + pageStart.toString()
-        }
-
-        val jsonObjectRequest = JsonObjectRequest(
-            Request.Method.GET, url, null,
-            { response ->
-                pageResult = response.getJSONArray(results)
-
-                if (pageCurrentModule == 1) {
-                    // Primeros 10 registros de la página
-                    for (i in 0 until pageSize) {
-                        val it = pageResult!!.getJSONObject(i)
-
-                        val item = Item(
-                            it.getInt(Constants.ID),
-                            it.getString(Constants.NAME),
-                            it.getString(Constants.SPECIE),
-                            it.getString(Constants.IMAGE)
-                        )
-                        listItemsFavorites.map {
-                            if (it.id == item.id) {
-                                item.favorite = Constants.ITEM_FAVORITE
-                            }
-                        }
-
-                        listItems.add(item)
-                    }
-                } else {
-                    // Ultimos 10 registros de la pagina
-                    for (i in pageSize until pageResult!!.length() - 1) {
-                        val it = pageResult!!.getJSONObject(i)
-
-                        val item = Item(
-                            it.getInt(Constants.ID),
-                            it.getString(Constants.NAME),
-                            it.getString(Constants.SPECIE),
-                            it.getString(Constants.IMAGE)
-                        )
-                        listItemsFavorites.map {
-                            if (it.id == item.id) {
-                                item.favorite = Constants.ITEM_FAVORITE
-                            }
-                        }
-
-                        listItems.add(item)
-                    }
-                }
-
-                // Validar la carga de los 10 items *****
-                val adapter = ItemListAdapter {
-                    registerItem(it)
-                }
-
-                binding.rvItems.layoutManager = layoutManager
-                binding.rvItems.adapter = adapter
-                adapter.submitList(listItems)
-            },
-            { error ->
-                // TODO: Handle error
-                Log.e("error", error.toString())
-            }
-        )
-        // Access the RequestQueue through your singleton class.
-        HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
     }
 
     /**
@@ -300,59 +221,6 @@ class HomeFragment : Fragment() {
             e.printStackTrace()
         }
     }
-
-    /**
-     * Obtener la información de la variable local
-     * */
-    private fun getDataLocal() {
-        if (pageCurrentModule == 1) {
-            // Primeros 10 registros de la página
-            for (i in 0 until pageSize) {
-                val it = pageResult!!.getJSONObject(i)
-
-                val item = shareViewModel.getNewItemEntry(
-                    it.getInt(Constants.ID),
-                    it.getString(Constants.NAME),
-                    it.getString(Constants.SPECIE),
-                    it.getString(Constants.IMAGE)
-                )
-                listItemsFavorites.map {
-                    if (it.id == item.id) {
-                        item.favorite = Constants.ITEM_FAVORITE
-                    }
-                }
-                listItems.add(item)
-            }
-        } else {
-            // Ultimos 10 registros de la pagina
-            for (i in pageSize until pageResult!!.length() - 1) {
-                val it = pageResult!!.getJSONObject(i)
-
-                val item = shareViewModel.getNewItemEntry(
-                    it.getInt(Constants.ID),
-                    it.getString(Constants.NAME),
-                    it.getString(Constants.SPECIE),
-                    it.getString(Constants.IMAGE)
-                )
-
-                listItemsFavorites.map {
-                    if (it.id == item.id) {
-                        item.favorite = Constants.ITEM_FAVORITE
-                    }
-                }
-                listItems.add(item)
-            }
-        }
-
-        val adapter = ItemListAdapter {
-            addNewItem(it)
-        }
-
-        binding.rvItems.layoutManager = layoutManager
-        binding.rvItems.adapter = adapter
-        adapter.submitList(listItems)
-    }
-
 
     /**
      * Returns true if the EditTexts are not empty
@@ -438,8 +306,43 @@ class HomeFragment : Fragment() {
 
         searchView.setOnCloseListener {
             listItems.clear()
-            getDataApi()
+            getData()
             false
         }
+    }
+
+    // Pagination
+    private fun pagination() {
+        binding.rvItems.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            var load: Boolean = true
+            // Variables paginacion
+            private var totalItemsCount = 0
+            private var firstVisibleItem = 0
+            private var visibleItemCount = 0
+            private var previousTotal = 0
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                if(dy > 0){
+                    firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
+                    totalItemsCount = layoutManager.itemCount
+                    visibleItemCount = layoutManager.findFirstVisibleItemPosition()
+                    if(load){
+                        if(totalItemsCount > previousTotal){
+                            previousTotal = totalItemsCount;
+                            pageCurrent+=1
+                            load = false;
+                        }
+                    }
+
+                    if (!load && (firstVisibleItem + visibleItemCount) >= totalItemsCount ) {
+                        getData()
+                        load = true
+                        Log.d("loading", "Loading")
+                    }
+                }
+            }
+        })
     }
 }
