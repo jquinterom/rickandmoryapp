@@ -53,14 +53,6 @@ class HomeFragment : Fragment() {
     private var listItems = arrayListOf<Item>()
     private var listItemsFavorites = mutableListOf<Item>()
 
-    // Validar la carga de los 10 items *****
-    private val adapter = ItemListAdapter {
-        registerItem(it)
-    }
-
-
-
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -76,10 +68,6 @@ class HomeFragment : Fragment() {
             listItemsFavorites = it as MutableList<Item>
 
         }
-
-        binding.rvItems.layoutManager = layoutManager
-        binding.rvItems.adapter = adapter
-        adapter.submitList(listItems)
 
         pagination()
 
@@ -132,7 +120,16 @@ class HomeFragment : Fragment() {
                         }
                         listItems.add(item)
                     }
-                    adapter.notifyDataSetChanged()
+                    //adapter.notifyDataSetChanged()
+                    // Validar la carga de los 10 items *****
+                    val adapter = ItemListAdapter {
+                        registerItem(it)
+                    }
+
+                    binding.rvItems.layoutManager = layoutManager
+                    binding.rvItems.adapter = adapter
+                    adapter.submitList(listItems)
+                    //adapter.notifyDataSetChanged()
                 },
                 { error ->
                     // TODO: Handle error
