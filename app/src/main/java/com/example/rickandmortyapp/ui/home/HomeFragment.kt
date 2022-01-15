@@ -2,15 +2,16 @@ package com.example.rickandmortyapp.ui.home
 
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import android.widget.SearchView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.lifecycle.Observer
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
+import com.example.rickandmortyapp.R
 import com.example.rickandmortyapp.constants.Constants
 import com.example.rickandmortyapp.data.Item
 import com.example.rickandmortyapp.data.ItemRoomDatabase
@@ -23,6 +24,8 @@ import org.json.JSONArray
 import java.lang.Exception
 
 class HomeFragment : Fragment() {
+
+
 
     // Instance database
     private val database: ItemRoomDatabase by lazy { ItemRoomDatabase.getDatabase(requireActivity().applicationContext) }
@@ -49,12 +52,17 @@ class HomeFragment : Fragment() {
     private val layoutManager =  LinearLayoutManager(this.context)
     private var listItems = arrayListOf<Item>()
 
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
+
+        shareViewModel.text.observe(viewLifecycleOwner, Observer{
+            binding.textHome.text = it
+        })
         return binding.root
     }
 
@@ -108,6 +116,7 @@ class HomeFragment : Fragment() {
      * Get all data from characters
      * */
     private fun getData(){
+        binding.pBar.visibility = View.VISIBLE
         try {
             // Validar el modulo y pagina a cargar
             val module = validateModule()
@@ -133,9 +142,11 @@ class HomeFragment : Fragment() {
                     }
                 }
             }
+            binding.pBar.visibility = View.GONE
         } catch (e: Exception){
             // Mostar mensaje amigable de no carga de datos
             e.printStackTrace()
+            binding.pBar.visibility = View.GONE
         }
     }
 
@@ -200,6 +211,65 @@ class HomeFragment : Fragment() {
     }
 
     /**
+     * Obtener información con el buscador
+     * */
+    private fun getDataApiSearch(parameter: String){
+        binding.pBar.visibility = View.VISIBLE
+        binding.textHome.visibility = View.GONE
+
+        binding.rvItems.adapter = null
+
+        val url = EndPoint.CHARACTERS_FILTER_NAME + parameter
+        val jsonObjectRequest = JsonObjectRequest(
+            Request.Method.GET, url, null,
+            { response ->
+
+                listItems.clear()
+
+                PAGE_RESULT = response.getJSONArray(RESULTS)
+
+                // Solo los 10 primeros registros de la pagina
+                for (i in 0 until PAGE_RESULT!!.length() - 1) {
+                    val it = PAGE_RESULT!!.getJSONObject(i)
+
+                    val item = Item(
+                        it.getInt(Constants.ID),
+                        it.getString(Constants.NAME),
+                        it.getString(Constants.SPECIE),
+                        it.getString(Constants.IMAGE)
+                    )
+                    listItems.add(item)
+                }
+
+                val adapter = ItemListAdapter {
+                    registerItem(it)
+                }
+
+                binding.rvItems.layoutManager = layoutManager
+                binding.rvItems.adapter = adapter
+                adapter.submitList(listItems)
+
+                binding.pBar.visibility = View.GONE
+            }
+            ,
+            { error ->
+                if(error.networkResponse.statusCode == Constants.NotFound){
+                    binding.textHome.visibility = View.VISIBLE
+                } else {
+                    binding.textHome.visibility = View.GONE
+                    error.printStackTrace()
+                }
+
+                binding.pBar.visibility = View.GONE
+            }
+        )
+
+        // Access the RequestQueue through your singleton class.
+        HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
+    }
+
+
+    /**
      * Obtener la información de la variable local
      * */
     private fun getDataLocal(){
@@ -231,8 +301,6 @@ class HomeFragment : Fragment() {
             }
         }
 
-
-        // Validar la carga de los 10 items *****
         val adapter = ItemListAdapter {
             addNewItem(it)
         }
@@ -281,6 +349,36 @@ class HomeFragment : Fragment() {
             } else {
                 Toast.makeText(binding.root.context, "Limite de favoritos alcanzado", Toast.LENGTH_LONG).show()
             }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+
+        val search = menu.findItem(R.id.search)
+        val searchView = search.actionView as SearchView
+        searchView.queryHint = "Search"
+
+        searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                // Obtener datos del API
+                getDataApiSearch(query.toString())
+                return false
+            }
+            override fun onQueryTextChange(newText: String?): Boolean {
+                return true
+            }
+        })
+
+        searchView.setOnCloseListener {
+            listItems.clear()
+            getDataApi()
+            false
         }
     }
 }

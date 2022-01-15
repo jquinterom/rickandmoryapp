@@ -16,4 +16,8 @@ object Constants {
     const val MODULE_FOUR = 4
 
     const val MAX_FAVORITES = 5
+
+    // region Http Status Code
+    const val NotFound = 404
+    // endregion
 }
