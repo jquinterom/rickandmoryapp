@@ -7,7 +7,6 @@ import kotlinx.coroutines.launch
 
 class ShareViewModel(private val itemDao: ItemDao) : ViewModel() {
 
-
     private val _text = MutableLiveData<String>().apply {
         value = "Data not found"
     }
