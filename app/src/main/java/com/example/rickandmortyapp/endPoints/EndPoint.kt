@@ -1,5 +1,7 @@
 package com.example.rickandmortyapp.endPoints
 
 object EndPoint {
-    val CHARACTERS = "https://rickandmortyapi.com/api/character/?page="
+    private const val API = "https://rickandmortyapi.com/api/character/"
+    const val CHARACTERS = "$API?page="
+    const val CHARACTERS_FILTER_NAME = "$API?name="
 }
