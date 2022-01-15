@@ -345,7 +345,7 @@ class HomeFragment : Fragment() {
         }
 
         val adapter = ItemListAdapter {
-            addNewItem(it)
+            //addNewItem(it)
         }
 
         binding.rvItems.layoutManager = layoutManager
@@ -371,14 +371,29 @@ class HomeFragment : Fragment() {
     private fun addNewItem(item: Item) {
         isEntryValid(item)
         if (isEntryValid(item)) {
-            shareViewModel.addNewItem(
-                item.id,
-                item.name,
-                item.specie,
-                item.image,
-                Constants.ITEM_FAVORITE
-            )
-            Toast.makeText(binding.root.context, "Agregado a favoritos", Toast.LENGTH_SHORT).show()
+            var add = true
+            listItemsFavorites.map {
+                if(it.id == item.id){
+                    add = false
+                }
+            }
+
+            val message : String = if(add){
+                // Agregar
+                shareViewModel.addNewItem(
+                    item.id,
+                    item.name,
+                    item.specie,
+                    item.image,
+                    Constants.ITEM_FAVORITE
+                )
+                "Agregado a favoritos"
+            } else {
+                // Eliminar
+                shareViewModel.deleteItem(item)
+                "Eliminado de favoritos"
+            }
+            Toast.makeText(binding.root.context, message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -386,16 +401,14 @@ class HomeFragment : Fragment() {
      * Validate [Item] count and register
      */
     private fun registerItem(item: Item) {
-        shareViewModel.allItems.observe(this.viewLifecycleOwner) { items ->
-            if (items.size < Constants.MAX_FAVORITES) {
-                addNewItem(item)
-            } else {
-                Toast.makeText(
-                    binding.root.context,
-                    "Limite de favoritos alcanzado",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+        if(listItemsFavorites.size < Constants.MAX_FAVORITES){
+            addNewItem(item)
+        } else {
+            Toast.makeText(
+                binding.root.context,
+                "Limite de favoritos alcanzado",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
