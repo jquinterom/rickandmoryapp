@@ -14,4 +14,12 @@ object Constants {
     const val MODULE_TWO = 2
     const val MODULE_THREE = 3
     const val MODULE_FOUR = 4
+
+    const val MAX_FAVORITES = 5
+
+    // region Http Status Code
+    const val NotFound = 404
+    // endregion
+
+    const val ITEM_FAVORITE = 1
 }

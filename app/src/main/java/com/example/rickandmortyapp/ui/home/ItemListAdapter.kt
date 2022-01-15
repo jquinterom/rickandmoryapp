@@ -8,10 +8,15 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.android.volley.toolbox.ImageRequest
+import com.example.rickandmortyapp.R
 import com.example.rickandmortyapp.data.Item
 import com.example.rickandmortyapp.databinding.ItemListHomeBinding
 import com.example.rickandmortyapp.http.HttpSingleton
 import java.lang.Exception
+import android.app.Activity
+
+
+
 
 class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
     ListAdapter<Item, ItemListAdapter.ItemViewHolder>(DiffCallback) {
@@ -31,13 +36,6 @@ class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         val current = getItem(position)
-
-        /*
-        holder.itemView.setOnClickListener {
-            onItemClicked(current)
-        }
-        */
-
         holder.bind(current, onItemClicked)
     }
 
@@ -52,6 +50,11 @@ class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
                 // Evento para agregar a favoritos
                 binding.btnFavorite.setOnClickListener {
                     onItemClicked(item)
+                }
+
+                // Item Favorite
+                if(item.favorite == 1){
+                    binding.btnFavorite.setButtonDrawable(R.drawable.ic_yellow_star)
                 }
 
                 // Cargando imagen
