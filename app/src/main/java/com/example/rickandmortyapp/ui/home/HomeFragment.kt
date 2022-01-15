@@ -25,8 +25,6 @@ import java.lang.Exception
 
 class HomeFragment : Fragment() {
 
-
-
     // Instance database
     private val database: ItemRoomDatabase by lazy { ItemRoomDatabase.getDatabase(requireActivity().applicationContext) }
 
@@ -51,6 +49,7 @@ class HomeFragment : Fragment() {
     private var PAGE_RESULT: JSONArray? = null
     private val layoutManager =  LinearLayoutManager(this.context)
     private var listItems = arrayListOf<Item>()
+    private var listItemsFavorites = mutableListOf<Item>()
 
 
     override fun onCreateView(
@@ -63,6 +62,13 @@ class HomeFragment : Fragment() {
         shareViewModel.text.observe(viewLifecycleOwner, Observer{
             binding.textHome.text = it
         })
+
+        shareViewModel.allItems.observe(this.viewLifecycleOwner) {
+            listItemsFavorites = it as MutableList<Item>
+
+        }
+
+
         return binding.root
     }
 
@@ -175,6 +181,12 @@ class HomeFragment : Fragment() {
                             it.getString(Constants.SPECIE),
                             it.getString(Constants.IMAGE)
                         )
+                        listItemsFavorites.map {
+                            if(it.id == item.id){
+                                item.favorite = Constants.ITEM_FAVORITE
+                            }
+                        }
+
                         listItems.add(item)
                     }
                 } else {
@@ -188,6 +200,12 @@ class HomeFragment : Fragment() {
                             it.getString(Constants.SPECIE),
                             it.getString(Constants.IMAGE)
                         )
+                        listItemsFavorites.map {
+                            if(it.id == item.id){
+                                item.favorite = Constants.ITEM_FAVORITE
+                            }
+                        }
+
                         listItems.add(item)
                     }
                 }
@@ -220,54 +238,81 @@ class HomeFragment : Fragment() {
         binding.rvItems.adapter = null
 
         val url = EndPoint.CHARACTERS_FILTER_NAME + parameter
-        val jsonObjectRequest = JsonObjectRequest(
-            Request.Method.GET, url, null,
-            { response ->
 
-                listItems.clear()
+        try {
+            val jsonObjectRequest = JsonObjectRequest(
+                Request.Method.GET, url, null,
+                { response ->
+                    listItems.clear()
 
-                PAGE_RESULT = response.getJSONArray(RESULTS)
+                    PAGE_RESULT = response.getJSONArray(RESULTS)
+                    val pageSize: Int = if (PAGE_RESULT!!.length() < PAGE_SIZE) {
+                        PAGE_RESULT!!.length()
+                    } else {
+                        PAGE_SIZE
+                    }
 
-                // Solo los 10 primeros registros de la página
-                for (i in 0 until PAGE_SIZE) {
-                    val it = PAGE_RESULT!!.getJSONObject(i)
+                    // Solo los 10 primeros registros de la página
+                    for (i in 0 until pageSize) {
+                        val it = PAGE_RESULT!!.getJSONObject(i)
 
-                    val item = Item(
-                        it.getInt(Constants.ID),
-                        it.getString(Constants.NAME),
-                        it.getString(Constants.SPECIE),
-                        it.getString(Constants.IMAGE)
-                    )
-                    listItems.add(item)
+                        val item = Item(
+                            it.getInt(Constants.ID),
+                            it.getString(Constants.NAME),
+                            it.getString(Constants.SPECIE),
+                            it.getString(Constants.IMAGE)
+                        )
+
+                        listItemsFavorites.map {
+                            if(it.id == item.id){
+                                item.favorite = Constants.ITEM_FAVORITE
+                            }
+                        }
+                        listItems.add(item)
+
+                        /*
+                        shareViewModel.allItems.observe(this.viewLifecycleOwner) { items ->
+                            items.map {
+                                if (it.id == item.id) {
+                                    item.favorite = Constants.ITEM_FAVORITE
+                                }
+                            }
+                            listItems.add(item)
+                        }
+
+                         */
+
+                    }
+
+                    val adapter = ItemListAdapter {
+                        registerItem(it)
+                    }
+
+                    binding.rvItems.layoutManager = layoutManager
+                    binding.rvItems.adapter = adapter
+                    adapter.submitList(listItems)
+
+                    binding.pBar.visibility = View.GONE
+                },
+                { error ->
+                    if (error.networkResponse.statusCode == Constants.NotFound) {
+                        binding.textHome.visibility = View.VISIBLE
+                    } else {
+                        binding.textHome.visibility = View.GONE
+                        error.printStackTrace()
+                    }
+
+                    binding.pBar.visibility = View.GONE
                 }
+            )
 
-                val adapter = ItemListAdapter {
-                    registerItem(it)
-                }
-
-                binding.rvItems.layoutManager = layoutManager
-                binding.rvItems.adapter = adapter
-                adapter.submitList(listItems)
-
-                binding.pBar.visibility = View.GONE
-            }
-            ,
-            { error ->
-                if(error.networkResponse.statusCode == Constants.NotFound){
-                    binding.textHome.visibility = View.VISIBLE
-                } else {
-                    binding.textHome.visibility = View.GONE
-                    error.printStackTrace()
-                }
-
-                binding.pBar.visibility = View.GONE
-            }
-        )
-
-        // Access the RequestQueue through your singleton class.
-        HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
+            // Access the RequestQueue through your singleton class.
+            HttpSingleton.getInstance(binding.root.context).addToRequestQueue(jsonObjectRequest)
+        }  catch (e: Exception){
+            binding.textHome.visibility = View.VISIBLE
+            e.printStackTrace()
+        }
     }
-
 
     /**
      * Obtener la información de la variable local
@@ -284,6 +329,11 @@ class HomeFragment : Fragment() {
                     it.getString(Constants.SPECIE),
                     it.getString(Constants.IMAGE)
                 )
+                listItemsFavorites.map {
+                    if(it.id == item.id){
+                        item.favorite = Constants.ITEM_FAVORITE
+                    }
+                }
                 listItems.add(item)
             }
         } else {
@@ -297,6 +347,11 @@ class HomeFragment : Fragment() {
                     it.getString(Constants.SPECIE),
                     it.getString(Constants.IMAGE)
                 )
+                listItemsFavorites.map {
+                    if(it.id == item.id){
+                        item.favorite = Constants.ITEM_FAVORITE
+                    }
+                }
                 listItems.add(item)
             }
         }
@@ -333,6 +388,7 @@ class HomeFragment : Fragment() {
                 item.name,
                 item.specie,
                 item.image,
+                Constants.ITEM_FAVORITE
             )
         Toast.makeText(binding.root.context, "Agregado a favoritos", Toast.LENGTH_SHORT).show()
         }

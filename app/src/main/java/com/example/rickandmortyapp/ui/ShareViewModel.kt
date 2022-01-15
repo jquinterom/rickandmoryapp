@@ -48,20 +48,21 @@ class ShareViewModel(private val itemDao: ItemDao) : ViewModel() {
     /**
      * Get a new [Item]
      * */
-    private fun getNewItemEntry(id: Int, name: String, specie: String, image: String): Item{
+    private fun getNewItemEntry(id: Int, name: String, specie: String, image: String, favorite: Int): Item{
         return Item(
             id = id,
             name = name,
             specie = specie,
-            image = image
+            image = image,
+            favorite = favorite
         )
     }
 
     /**
      * Inserts the new Item into database.
      */
-    fun addNewItem(id: Int, itemName: String, itemPrice: String, itemCount: String) {
-        val newItem = getNewItemEntry(id, itemName, itemPrice, itemCount)
+    fun addNewItem(id: Int, itemName: String, itemPrice: String, itemCount: String, itemFavorite: Int = 0) {
+        val newItem = getNewItemEntry(id, itemName, itemPrice, itemCount, itemFavorite)
         insertItem(newItem)
     }
 
