@@ -48,7 +48,7 @@ class ShareViewModel(private val itemDao: ItemDao) : ViewModel() {
     /**
      * Get a new [Item]
      * */
-    private fun getNewItemEntry(id: Int, name: String, specie: String, image: String, favorite: Int): Item{
+    fun getNewItemEntry(id: Int, name: String, specie: String, image: String, favorite: Int = 0): Item{
         return Item(
             id = id,
             name = name,

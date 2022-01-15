@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.lifecycle.Observer
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.example.rickandmortyapp.R
@@ -41,12 +40,12 @@ class HomeFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
-    private val RESULTS = "results"
-    private var PAGE_CURRENT = 0 // pagina actual
-    private val PAGE_START = 1 // pagina actual
-    private var PAGE_SIZE = 9 // maxima cantidad de items
-    private var PAGE_CURRENT_MODULE = 1 // Modulo que puede cambiar
-    private var PAGE_RESULT: JSONArray? = null
+    private val results = "results"
+    private var pageCurrent = 0 // pagina actual
+    private val pageStart = 1 // pagina actual
+    private var pageSize = 9 // maxima cantidad de items
+    private var pageCurrentModule = 1 // Modulo que puede cambiar
+    private var pageResult: JSONArray? = null
     private val layoutManager =  LinearLayoutManager(this.context)
     private var listItems = arrayListOf<Item>()
     private var listItemsFavorites = mutableListOf<Item>()
@@ -56,10 +55,10 @@ class HomeFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
-        shareViewModel.text.observe(viewLifecycleOwner, Observer{
+        shareViewModel.text.observe(viewLifecycleOwner, {
             binding.textHome.text = it
         })
 
@@ -90,24 +89,24 @@ class HomeFragment : Fragment() {
     private fun validateModule(): Int{
         // Validamos el modulo
         when {
-            PAGE_CURRENT_MODULE  == 1 -> {
+            pageCurrentModule  == 1 -> {
                 // Cargamos por primera vez
                 return Constants.MODULE_ONE
             }
-            PAGE_CURRENT_MODULE == 2 -> {
+            pageCurrentModule == 2 -> {
                 // Cargamos la segunda parte
                 return Constants.MODULE_TWO
             }
-            PAGE_CURRENT_MODULE < 1 -> {
-                if(PAGE_CURRENT != PAGE_START ) PAGE_CURRENT -=1
-                PAGE_CURRENT_MODULE = 2
+            pageCurrentModule < 1 -> {
+                if(pageCurrent != pageStart ) pageCurrent -=1
+                pageCurrentModule = 2
                 return Constants.MODULE_THREE
 
                 // Cargamos pagina anterior con modulo = 2
             }
-            PAGE_CURRENT_MODULE > 2 -> {
-                PAGE_CURRENT += 1
-                PAGE_CURRENT_MODULE = 1
+            pageCurrentModule > 2 -> {
+                pageCurrent += 1
+                pageCurrentModule = 1
                 return Constants.MODULE_FOUR
 
                 // Cargamos siguiente pagina con modulo = 1
@@ -126,13 +125,13 @@ class HomeFragment : Fragment() {
         try {
             // Validar el modulo y pagina a cargar
             val module = validateModule()
-            if (PAGE_CURRENT != PAGE_START) { // Pagina inicial
+            if (pageCurrent != pageStart) { // Pagina inicial
                 when (module) {
                     Constants.MODULE_ONE -> {
-                        if(PAGE_CURRENT == 0){
+                        if(pageCurrent == 0){
                             // peticion a la API
                             getDataApi()
-                            PAGE_CURRENT += PAGE_START
+                            pageCurrent += pageStart
                         } else {
                             // Carga de lista ya existente
                             getDataLocal()
@@ -160,20 +159,20 @@ class HomeFragment : Fragment() {
      * Realizar peticion a la API
      * */
     private fun getDataApi(){
-        var url = EndPoint.CHARACTERS + PAGE_CURRENT.toString()
-        if(PAGE_CURRENT == 0){ // Cargar pagina 1
-            url = EndPoint.CHARACTERS + PAGE_START.toString()
+        var url = EndPoint.CHARACTERS + pageCurrent.toString()
+        if(pageCurrent == 0){ // Cargar pagina 1
+            url = EndPoint.CHARACTERS + pageStart.toString()
         }
 
         val jsonObjectRequest = JsonObjectRequest(
             Request.Method.GET, url, null,
             { response ->
-                PAGE_RESULT = response.getJSONArray(RESULTS)
+                pageResult = response.getJSONArray(results)
 
-                if (PAGE_CURRENT_MODULE == 1) {
+                if (pageCurrentModule == 1) {
                     // Primeros 10 registros de la página
-                    for (i in 0 until PAGE_SIZE) {
-                        val it = PAGE_RESULT!!.getJSONObject(i)
+                    for (i in 0 until pageSize) {
+                        val it = pageResult!!.getJSONObject(i)
 
                         val item = Item(
                             it.getInt(Constants.ID),
@@ -191,8 +190,8 @@ class HomeFragment : Fragment() {
                     }
                 } else {
                     // Ultimos 10 registros de la pagina
-                    for (i in PAGE_SIZE until PAGE_RESULT!!.length() - 1) {
-                        val it = PAGE_RESULT!!.getJSONObject(i)
+                    for (i in pageSize until pageResult!!.length() - 1) {
+                        val it = pageResult!!.getJSONObject(i)
 
                         val item = Item(
                             it.getInt(Constants.ID),
@@ -245,16 +244,16 @@ class HomeFragment : Fragment() {
                 { response ->
                     listItems.clear()
 
-                    PAGE_RESULT = response.getJSONArray(RESULTS)
-                    val pageSize: Int = if (PAGE_RESULT!!.length() < PAGE_SIZE) {
-                        PAGE_RESULT!!.length()
+                    pageResult = response.getJSONArray(results)
+                    val pageSize: Int = if (pageResult!!.length() < pageSize) {
+                        pageResult!!.length()
                     } else {
-                        PAGE_SIZE
+                        pageSize
                     }
 
                     // Solo los 10 primeros registros de la página
                     for (i in 0 until pageSize) {
-                        val it = PAGE_RESULT!!.getJSONObject(i)
+                        val it = pageResult!!.getJSONObject(i)
 
                         val item = Item(
                             it.getInt(Constants.ID),
@@ -269,19 +268,6 @@ class HomeFragment : Fragment() {
                             }
                         }
                         listItems.add(item)
-
-                        /*
-                        shareViewModel.allItems.observe(this.viewLifecycleOwner) { items ->
-                            items.map {
-                                if (it.id == item.id) {
-                                    item.favorite = Constants.ITEM_FAVORITE
-                                }
-                            }
-                            listItems.add(item)
-                        }
-
-                         */
-
                     }
 
                     val adapter = ItemListAdapter {
@@ -318,13 +304,12 @@ class HomeFragment : Fragment() {
      * Obtener la información de la variable local
      * */
     private fun getDataLocal(){
-        if (PAGE_CURRENT_MODULE == 1) {
+        if (pageCurrentModule == 1) {
             // Primeros 10 registros de la página
-            for (i in 0 until PAGE_SIZE) {
-                val it = PAGE_RESULT!!.getJSONObject(i)
+            for (i in 0 until pageSize) {
+                val it = pageResult!!.getJSONObject(i)
 
-                val item = Item(
-                    it.getInt(Constants.ID),
+                val item = shareViewModel.getNewItemEntry(it.getInt(Constants.ID),
                     it.getString(Constants.NAME),
                     it.getString(Constants.SPECIE),
                     it.getString(Constants.IMAGE)
@@ -338,15 +323,15 @@ class HomeFragment : Fragment() {
             }
         } else {
             // Ultimos 10 registros de la pagina
-            for (i in PAGE_SIZE until PAGE_RESULT!!.length() - 1) {
-                val it = PAGE_RESULT!!.getJSONObject(i)
+            for (i in pageSize until pageResult!!.length() - 1) {
+                val it = pageResult!!.getJSONObject(i)
 
-                val item = Item(
-                    it.getInt(Constants.ID),
+                val item = shareViewModel.getNewItemEntry(it.getInt(Constants.ID),
                     it.getString(Constants.NAME),
                     it.getString(Constants.SPECIE),
                     it.getString(Constants.IMAGE)
                 )
+
                 listItemsFavorites.map {
                     if(it.id == item.id){
                         item.favorite = Constants.ITEM_FAVORITE
