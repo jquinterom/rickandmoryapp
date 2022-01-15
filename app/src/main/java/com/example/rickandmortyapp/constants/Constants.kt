@@ -20,4 +20,6 @@ object Constants {
     // region Http Status Code
     const val NotFound = 404
     // endregion
+
+    const val ITEM_FAVORITE = 1
 }

@@ -13,6 +13,8 @@ data class Item(
     @ColumnInfo(name = "specie")
     val specie: String,
     @ColumnInfo(name = "image")
-    val image : String
+    val image : String,
+    @ColumnInfo(name = "favorite")
+    var favorite: Int = 0
 
 )
