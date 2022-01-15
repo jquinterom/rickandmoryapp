@@ -345,7 +345,7 @@ class HomeFragment : Fragment() {
         }
 
         val adapter = ItemListAdapter {
-            //addNewItem(it)
+            addNewItem(it)
         }
 
         binding.rvItems.layoutManager = layoutManager
