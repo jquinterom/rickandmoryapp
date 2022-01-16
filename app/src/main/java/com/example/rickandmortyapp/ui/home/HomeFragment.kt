@@ -7,6 +7,8 @@ import android.view.*
 import android.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -53,6 +55,8 @@ class HomeFragment : Fragment() {
     private val layoutManager = LinearLayoutManager(this.context)
     private var listItems = arrayListOf<Item>()
     private var listItemsFavorites = mutableListOf<Item>()
+    private lateinit var count: MenuItem
+
 
     private val adapter = ItemListAdapter {
         addNewItem(it)
@@ -110,7 +114,7 @@ class HomeFragment : Fragment() {
                     pageResult = response.getJSONArray(results)
 
                     // Primeros 10 registros de la página
-                    for (i in 0 until pageResult!!.length() -1) {
+                    for (i in 0 until pageResult!!.length() - 1) {
                         val it = pageResult!!.getJSONObject(i)
 
                         val item = Item(
@@ -230,14 +234,14 @@ class HomeFragment : Fragment() {
         if (isEntryValid(item)) {
             var add = true
             listItemsFavorites.map {
-                if(it.id == item.id){
+                if (it.id == item.id) {
                     add = false
                 }
             }
-            val message : String
+            val message: String
 
-            if(add){
-                message = if(listItemsFavorites.size < Constants.MAX_FAVORITES) {
+            if (add) {
+                message = if (listItemsFavorites.size < Constants.MAX_FAVORITES) {
                     // Agregar
                     shareViewModel.addNewItem(
                         item.id,
@@ -263,7 +267,6 @@ class HomeFragment : Fragment() {
     }
 
 
-
     // region menu
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -274,6 +277,9 @@ class HomeFragment : Fragment() {
         super.onCreateOptionsMenu(menu, inflater)
 
         val search = menu.findItem(R.id.search)
+        count = menu.findItem(R.id.count)
+        count.title = "Pag. $pageCurrent"
+
         val searchView = search.actionView as SearchView
         searchView.queryHint = "Search"
 
@@ -291,6 +297,7 @@ class HomeFragment : Fragment() {
 
         searchView.setOnCloseListener {
             pageCurrent = pageStart
+            count.title = "Pag. $pageCurrent"
 
             listItems.clear()
             binding.textHome.visibility = View.GONE
@@ -304,40 +311,47 @@ class HomeFragment : Fragment() {
      * Pagination
      */
     private fun pagination() {
-        binding.rvItems.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            var load: Boolean = true
-            // Variables paginacion
-            private var totalItemsCount = 0
-            private var firstVisibleItem = 0
-            private var visibleItemCount = 0
-            private var previousTotal = 0
+        try {
+            binding.rvItems.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                var load: Boolean = true
 
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
+                // Variables paginacion
+                private var totalItemsCount = 0
+                private var firstVisibleItem = 0
+                private var visibleItemCount = 0
+                private var previousTotal = 0
 
-                if(dy > 0){
-                    firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
-                    totalItemsCount = layoutManager.itemCount
-                    visibleItemCount = layoutManager.findFirstVisibleItemPosition()
-                    if(load){
-                        if(totalItemsCount > previousTotal){
-                            previousTotal = totalItemsCount;
-                            pageCurrent+=1
-                            load = false;
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    if (dy > 0) {
+                        firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
+                        totalItemsCount = layoutManager.itemCount
+                        visibleItemCount = layoutManager.findFirstVisibleItemPosition()
+                        if (load) {
+                            if (totalItemsCount > previousTotal) {
+                                previousTotal = totalItemsCount;
+                                pageCurrent += 1
+                                load = false;
+                            }
+                        }
+
+                        if (!load && (firstVisibleItem + visibleItemCount) >= totalItemsCount) {
+                            getData()
+
+                            count.title = "Pag. $pageCurrent"
+
+                            load = true
                         }
                     }
-
-                    if (!load && (firstVisibleItem + visibleItemCount) >= totalItemsCount ) {
-                        getData()
-                        load = true
-                        Log.d("loading", "Loading")
-                    }
                 }
-            }
-        })
+            })
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
-    private fun gotToFavorites(){
+    private fun gotToFavorites() {
         findNavController().navigate(HomeFragmentDirections.actionNavHomeToNavGallery())
     }
 }
