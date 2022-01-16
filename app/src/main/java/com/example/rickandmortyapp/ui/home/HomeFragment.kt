@@ -5,11 +5,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.SearchView
-import kotlinx.coroutines.flow.Flow
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -23,6 +20,7 @@ import com.example.rickandmortyapp.databinding.FragmentHomeBinding
 import com.example.rickandmortyapp.endPoints.EndPoint
 import com.example.rickandmortyapp.http.HttpSingleton
 import com.example.rickandmortyapp.ui.HomeViewModelFactory
+import com.example.rickandmortyapp.ui.ItemListAdapter
 import com.example.rickandmortyapp.ui.ShareViewModel
 import com.google.android.material.snackbar.Snackbar
 import org.json.JSONArray

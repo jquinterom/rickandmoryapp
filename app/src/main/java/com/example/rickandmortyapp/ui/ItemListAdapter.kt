@@ -1,5 +1,6 @@
-package com.example.rickandmortyapp.ui.home
+package com.example.rickandmortyapp.ui
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -41,6 +42,7 @@ class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
     class ItemViewHolder(private var binding: ItemListHomeBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
+        @SuppressLint("UseCompatLoadingForDrawables")
         fun bind(item: Item, onItemClicked: (Item) -> Unit) {
             try {
                 binding.txtName.text = item.name
@@ -53,7 +55,10 @@ class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
 
                 // Item Favorite
                 if(item.favorite == 1){
-                    binding.btnFavorite.setButtonDrawable(R.drawable.ic_yellow_star)
+                    //binding.btnFavorite.setButtonDrawable(R.drawable.ic_yellow_star)
+                    binding.btnFavorite.background = binding.root.resources.getDrawable(R.drawable.ic_yellow_star, binding.root.context.theme)
+                } else {
+                    binding.btnFavorite.background = binding.root.resources.getDrawable(R.drawable.ic_grey_star, binding.root.context.theme)
                 }
 
                 // Cargando imagen

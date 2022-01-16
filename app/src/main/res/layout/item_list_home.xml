@@ -63,7 +63,9 @@
                 android:textOn=""
                 android:textOff=""
                 android:layout_gravity="end|bottom"
-                android:background="@drawable/ic_grey_star"/>
+                android:background="@drawable/ic_grey_star"
+                android:layout_marginEnd="@dimen/padding_item_list"
+                android:layout_marginBottom="@dimen/padding_item_list"/>
 
         </androidx.cardview.widget.CardView>
     </androidx.constraintlayout.widget.ConstraintLayout>
