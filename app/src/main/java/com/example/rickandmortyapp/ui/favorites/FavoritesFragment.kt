@@ -113,6 +113,7 @@ class FavoritesFragment : Fragment() {
         super.onCreateOptionsMenu(menu, inflater)
 
         val search = menu.findItem(R.id.search)
+        menu.findItem(R.id.count).isVisible = false
         val searchView = search.actionView as SearchView
         searchView.queryHint = "Search favorite"
 
