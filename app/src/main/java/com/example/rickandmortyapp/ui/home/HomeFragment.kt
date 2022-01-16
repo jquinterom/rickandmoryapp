@@ -48,7 +48,7 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val results = "results"
-    private var pageCurrent = 0 // pagina actual
+    private var pageCurrent = 1 // pagina actual
     private val pageStart = 1 // pagina actual
     private var pageSize = 9 // maxima cantidad de items
     private var pageResult: JSONArray? = null
@@ -88,7 +88,6 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-
         // Iniciar con 0
         getData()
     }
@@ -105,10 +104,7 @@ class HomeFragment : Fragment() {
     private fun getData() {
         binding.pBar.visibility = View.VISIBLE
         try {
-            var url = EndPoint.CHARACTERS + pageCurrent.toString()
-            if (pageCurrent == 0) { // Cargar pagina 1
-                url = EndPoint.CHARACTERS + pageStart.toString()
-            }
+            val url = EndPoint.CHARACTERS + pageCurrent.toString()
 
             val jsonObjectRequest = JsonObjectRequest(
                 Request.Method.GET, url, null,
@@ -303,6 +299,8 @@ class HomeFragment : Fragment() {
         })
 
         searchView.setOnCloseListener {
+            pageCurrent = pageStart
+
             listItems.clear()
             binding.textHome.visibility = View.GONE
             getData()
