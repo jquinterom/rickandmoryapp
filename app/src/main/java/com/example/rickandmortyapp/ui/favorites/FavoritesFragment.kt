@@ -76,13 +76,12 @@ class FavoritesFragment : Fragment() {
     /**
      * Get data favorites
      * */
-    private fun getData(){
+    private fun getData() {
         binding.rvItems.layoutManager = LinearLayoutManager(this.context)
         binding.rvItems.adapter = adapter
 
-        shareViewModel.allItems.observe(this.viewLifecycleOwner){
-            items ->
-            if (items.isNotEmpty()){
+        shareViewModel.allItems.observe(this.viewLifecycleOwner) { items ->
+            if (items.isNotEmpty()) {
                 binding.textGallery.visibility = View.GONE
             } else {
                 binding.textGallery.visibility = View.VISIBLE
@@ -96,7 +95,7 @@ class FavoritesFragment : Fragment() {
     /**
      * Remove item fom favorites
      * */
-    private fun removeItem(item: Item){
+    private fun removeItem(item: Item) {
         shareViewModel.deleteItem(item)
     }
 
@@ -106,7 +105,7 @@ class FavoritesFragment : Fragment() {
         setHasOptionsMenu(true)
 
         requireActivity().onBackPressedDispatcher.addCallback(this) {
-            findNavController().navigate(FavoritesFragmentDirections.actionNavGalleryToNavHome() )
+            findNavController().navigate(FavoritesFragmentDirections.actionNavGalleryToNavHome())
         }
     }
 
@@ -122,15 +121,17 @@ class FavoritesFragment : Fragment() {
                 // Obtener datos del API
                 val list = mutableListOf<Item>()
 
-                shareViewModel.allItems.observe(viewLifecycleOwner){ items ->
-                    if (items.isNotEmpty()){
+                shareViewModel.allItems.observe(viewLifecycleOwner) { items ->
+                    if (items.isNotEmpty()) {
                         binding.textGallery.visibility = View.GONE
                     } else {
                         binding.textGallery.visibility = View.VISIBLE
                     }
 
                     items.map {
-                        if(it.name.lowercase(Locale.getDefault()).contains(query.toString().lowercase(Locale.getDefault()))){
+                        if (it.name.lowercase(Locale.getDefault())
+                                .contains(query.toString().lowercase(Locale.getDefault()))
+                        ) {
                             list.add(it)
                         }
                     }
@@ -151,6 +152,5 @@ class FavoritesFragment : Fragment() {
             false
         }
     }
-    // endregion
     // endregion
 }
