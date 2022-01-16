@@ -13,7 +13,6 @@ import com.example.rickandmortyapp.data.Item
 import com.example.rickandmortyapp.databinding.ItemListHomeBinding
 import com.example.rickandmortyapp.http.HttpSingleton
 import java.lang.Exception
-import android.app.Activity
 
 
 
