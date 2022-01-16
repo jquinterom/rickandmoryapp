@@ -120,8 +120,7 @@ class FavoritesFragment : Fragment() {
                 // Obtener datos del API
                 val list = mutableListOf<Item>()
 
-                shareViewModel.allItems.observe(viewLifecycleOwner){
-                        items ->
+                shareViewModel.allItems.observe(viewLifecycleOwner){ items ->
                     if (items.isNotEmpty()){
                         binding.textGallery.visibility = View.GONE
                     } else {

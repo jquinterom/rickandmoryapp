@@ -56,6 +56,10 @@ class HomeFragment : Fragment() {
     private var listItems = arrayListOf<Item>()
     private var listItemsFavorites = mutableListOf<Item>()
 
+    private val adapter = ItemListAdapter {
+        registerItem(it)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -72,7 +76,11 @@ class HomeFragment : Fragment() {
 
         }
 
-        //pagination()
+        binding.rvItems.layoutManager = layoutManager
+        binding.rvItems.adapter = adapter
+        adapter.submitList(listItems)
+
+        pagination()
 
         return binding.root
     }
@@ -125,13 +133,7 @@ class HomeFragment : Fragment() {
                         listItems.add(item)
                     }
 
-                    val adapter = ItemListAdapter {
-                        registerItem(it)
-                    }
-
-                    binding.rvItems.layoutManager = layoutManager
-                    binding.rvItems.adapter = adapter
-                    adapter.submitList(listItems)
+                    adapter.notifyDataSetChanged()
                 },
                 { error ->
                     // TODO: Handle error
@@ -151,11 +153,11 @@ class HomeFragment : Fragment() {
     /**
      * Obtener información con el buscador
      * */
+    @SuppressLint("NotifyDataSetChanged")
     private fun getDataApiSearch(parameter: String) {
         binding.pBar.visibility = View.VISIBLE
         binding.textHome.visibility = View.GONE
-
-        binding.rvItems.adapter = null
+        listItems.clear()
 
         val url = EndPoint.CHARACTERS_FILTER_NAME + parameter
 
@@ -191,13 +193,7 @@ class HomeFragment : Fragment() {
                         listItems.add(item)
                     }
 
-                    val adapter = ItemListAdapter {
-                        registerItem(it)
-                    }
-
-                    binding.rvItems.layoutManager = layoutManager
-                    binding.rvItems.adapter = adapter
-                    adapter.submitList(listItems)
+                    adapter.notifyDataSetChanged()
 
                     binding.pBar.visibility = View.GONE
                 },
@@ -308,6 +304,7 @@ class HomeFragment : Fragment() {
 
         searchView.setOnCloseListener {
             listItems.clear()
+            binding.textHome.visibility = View.GONE
             getData()
             false
         }
