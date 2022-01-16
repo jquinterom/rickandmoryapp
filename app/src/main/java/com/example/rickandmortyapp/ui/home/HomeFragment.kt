@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.SearchView
-import kotlinx.coroutines.flow.Flow
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
@@ -23,6 +22,7 @@ import com.example.rickandmortyapp.databinding.FragmentHomeBinding
 import com.example.rickandmortyapp.endPoints.EndPoint
 import com.example.rickandmortyapp.http.HttpSingleton
 import com.example.rickandmortyapp.ui.HomeViewModelFactory
+import com.example.rickandmortyapp.ui.ItemListAdapter
 import com.example.rickandmortyapp.ui.ShareViewModel
 import com.google.android.material.snackbar.Snackbar
 import org.json.JSONArray
@@ -48,13 +48,20 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val results = "results"
-    private var pageCurrent = 0 // pagina actual
+    private var pageCurrent = 1 // pagina actual
     private val pageStart = 1 // pagina actual
     private var pageSize = 9 // maxima cantidad de items
     private var pageResult: JSONArray? = null
     private val layoutManager = LinearLayoutManager(this.context)
     private var listItems = arrayListOf<Item>()
     private var listItemsFavorites = mutableListOf<Item>()
+    private lateinit var count: MenuItem
+    private var previousTotal = 0
+
+
+    private val adapter = ItemListAdapter {
+        addNewItem(it)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -72,14 +79,17 @@ class HomeFragment : Fragment() {
 
         }
 
-        //pagination()
+        binding.rvItems.layoutManager = layoutManager
+        binding.rvItems.adapter = adapter
+        adapter.submitList(listItems)
+
+        pagination()
 
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
 
         // Iniciar con 0
         getData()
@@ -97,10 +107,7 @@ class HomeFragment : Fragment() {
     private fun getData() {
         binding.pBar.visibility = View.VISIBLE
         try {
-            var url = EndPoint.CHARACTERS + pageCurrent.toString()
-            if (pageCurrent == 0) { // Cargar pagina 1
-                url = EndPoint.CHARACTERS + pageStart.toString()
-            }
+            val url = EndPoint.CHARACTERS + pageCurrent.toString()
 
             val jsonObjectRequest = JsonObjectRequest(
                 Request.Method.GET, url, null,
@@ -108,7 +115,7 @@ class HomeFragment : Fragment() {
                     pageResult = response.getJSONArray(results)
 
                     // Primeros 10 registros de la página
-                    for (i in 0 until pageResult!!.length() -1) {
+                    for (i in 0 until pageResult!!.length() - 1) {
                         val it = pageResult!!.getJSONObject(i)
 
                         val item = Item(
@@ -125,13 +132,7 @@ class HomeFragment : Fragment() {
                         listItems.add(item)
                     }
 
-                    val adapter = ItemListAdapter {
-                        registerItem(it)
-                    }
-
-                    binding.rvItems.layoutManager = layoutManager
-                    binding.rvItems.adapter = adapter
-                    adapter.submitList(listItems)
+                    adapter.notifyDataSetChanged()
                 },
                 { error ->
                     // TODO: Handle error
@@ -151,11 +152,11 @@ class HomeFragment : Fragment() {
     /**
      * Obtener información con el buscador
      * */
+    @SuppressLint("NotifyDataSetChanged")
     private fun getDataApiSearch(parameter: String) {
         binding.pBar.visibility = View.VISIBLE
         binding.textHome.visibility = View.GONE
-
-        binding.rvItems.adapter = null
+        listItems.clear()
 
         val url = EndPoint.CHARACTERS_FILTER_NAME + parameter
 
@@ -191,13 +192,7 @@ class HomeFragment : Fragment() {
                         listItems.add(item)
                     }
 
-                    val adapter = ItemListAdapter {
-                        registerItem(it)
-                    }
-
-                    binding.rvItems.layoutManager = layoutManager
-                    binding.rvItems.adapter = adapter
-                    adapter.submitList(listItems)
+                    adapter.notifyDataSetChanged()
 
                     binding.pBar.visibility = View.GONE
                 },
@@ -240,46 +235,38 @@ class HomeFragment : Fragment() {
         if (isEntryValid(item)) {
             var add = true
             listItemsFavorites.map {
-                if(it.id == item.id){
+                if (it.id == item.id) {
                     add = false
                 }
             }
+            val message: String
 
-            val message : String = if(add){
-                // Agregar
-                shareViewModel.addNewItem(
-                    item.id,
-                    item.name,
-                    item.specie,
-                    item.image,
-                    Constants.ITEM_FAVORITE
-                )
-                "Agregado a favoritos"
+            if (add) {
+                message = if (listItemsFavorites.size < Constants.MAX_FAVORITES) {
+                    // Agregar
+                    shareViewModel.addNewItem(
+                        item.id,
+                        item.name,
+                        item.specie,
+                        item.image,
+                        Constants.ITEM_FAVORITE
+                    )
+                    "Agregado a favoritos"
+                } else {
+                    "Limite de favoritos alcanzado"
+                }
             } else {
                 // Eliminar
                 shareViewModel.deleteItem(item)
-                "Eliminado de favoritos"
+                message = "Eliminado de favoritos"
             }
             view?.let {
                 Snackbar.make(it, message, Snackbar.LENGTH_LONG)
-                    .setAction(Constants.FAVORITES, null).show()
+                    .setAction(Constants.FAVORITES) { gotToFavorites() }.show()
             }
         }
     }
 
-    /**
-     * Validate [Item] count and register
-     */
-    private fun registerItem(item: Item) {
-        if(listItemsFavorites.size < Constants.MAX_FAVORITES){
-            addNewItem(item)
-        } else {
-            view?.let {
-                Snackbar.make(it, "Limite de favoritos alcanzado", Snackbar.LENGTH_LONG)
-                    .setAction(Constants.FAVORITES, null).show()
-            }
-        }
-    }
 
     // region menu
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -291,6 +278,9 @@ class HomeFragment : Fragment() {
         super.onCreateOptionsMenu(menu, inflater)
 
         val search = menu.findItem(R.id.search)
+        count = menu.findItem(R.id.count)
+        count.title = "Pag. $pageCurrent"
+
         val searchView = search.actionView as SearchView
         searchView.queryHint = "Search"
 
@@ -307,7 +297,12 @@ class HomeFragment : Fragment() {
         })
 
         searchView.setOnCloseListener {
+            previousTotal = 0
+            pageCurrent = pageStart
+            count.title = "Pag. $pageCurrent"
+
             listItems.clear()
+            binding.textHome.visibility = View.GONE
             getData()
             false
         }
@@ -318,36 +313,45 @@ class HomeFragment : Fragment() {
      * Pagination
      */
     private fun pagination() {
-        binding.rvItems.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            var load: Boolean = true
-            // Variables paginacion
-            private var totalItemsCount = 0
-            private var firstVisibleItem = 0
-            private var visibleItemCount = 0
-            private var previousTotal = 0
+        try {
+            binding.rvItems.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                var load: Boolean = true
 
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
+                // Variables paginacion
+                private var totalItemsCount = 0
+                private var firstVisibleItem = 0
+                private var visibleItemCount = 0
 
-                if(dy > 0){
-                    firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
-                    totalItemsCount = layoutManager.itemCount
-                    visibleItemCount = layoutManager.findFirstVisibleItemPosition()
-                    if(load){
-                        if(totalItemsCount > previousTotal){
-                            previousTotal = totalItemsCount;
-                            pageCurrent+=1
-                            load = false;
+
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    if (dy > 0) {
+                        firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
+                        totalItemsCount = layoutManager.itemCount
+                        visibleItemCount = layoutManager.findFirstVisibleItemPosition()
+                        if (load) {
+                            if (totalItemsCount > previousTotal) {
+                                previousTotal = totalItemsCount;
+                                pageCurrent += 1
+                                load = false;
+                            }
+                        }
+
+                        if (!load && (firstVisibleItem + visibleItemCount) >= totalItemsCount) {
+                            getData()
+                            count.title = "Pag. $pageCurrent"
+                            load = true
                         }
                     }
-
-                    if (!load && (firstVisibleItem + visibleItemCount) >= totalItemsCount ) {
-                        getData()
-                        load = true
-                        Log.d("loading", "Loading")
-                    }
                 }
-            }
-        })
+            })
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun gotToFavorites() {
+        findNavController().navigate(HomeFragmentDirections.actionNavHomeToNavGallery())
     }
 }
