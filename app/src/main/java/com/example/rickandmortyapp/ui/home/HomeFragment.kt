@@ -56,6 +56,7 @@ class HomeFragment : Fragment() {
     private var listItems = arrayListOf<Item>()
     private var listItemsFavorites = mutableListOf<Item>()
     private lateinit var count: MenuItem
+    private var previousTotal = 0
 
 
     private val adapter = ItemListAdapter {
@@ -296,6 +297,7 @@ class HomeFragment : Fragment() {
         })
 
         searchView.setOnCloseListener {
+            previousTotal = 0
             pageCurrent = pageStart
             count.title = "Pag. $pageCurrent"
 
@@ -319,7 +321,7 @@ class HomeFragment : Fragment() {
                 private var totalItemsCount = 0
                 private var firstVisibleItem = 0
                 private var visibleItemCount = 0
-                private var previousTotal = 0
+
 
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
@@ -338,9 +340,7 @@ class HomeFragment : Fragment() {
 
                         if (!load && (firstVisibleItem + visibleItemCount) >= totalItemsCount) {
                             getData()
-
                             count.title = "Pag. $pageCurrent"
-
                             load = true
                         }
                     }
