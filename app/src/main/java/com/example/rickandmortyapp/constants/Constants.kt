@@ -22,4 +22,6 @@ object Constants {
     // endregion
 
     const val ITEM_FAVORITE = 1
+
+    const val FAVORITES = "Favorites"
 }

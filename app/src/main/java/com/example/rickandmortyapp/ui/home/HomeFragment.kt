@@ -5,12 +5,14 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.SearchView
-import android.widget.Toast
+import kotlinx.coroutines.flow.Flow
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.example.rickandmortyapp.R
@@ -22,6 +24,7 @@ import com.example.rickandmortyapp.endPoints.EndPoint
 import com.example.rickandmortyapp.http.HttpSingleton
 import com.example.rickandmortyapp.ui.HomeViewModelFactory
 import com.example.rickandmortyapp.ui.ShareViewModel
+import com.google.android.material.snackbar.Snackbar
 import org.json.JSONArray
 import java.lang.Exception
 
@@ -53,14 +56,6 @@ class HomeFragment : Fragment() {
     private var listItems = arrayListOf<Item>()
     private var listItemsFavorites = mutableListOf<Item>()
 
-    // Validar la carga de los 10 items *****
-    private val adapter = ItemListAdapter {
-        registerItem(it)
-    }
-
-
-
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -77,17 +72,14 @@ class HomeFragment : Fragment() {
 
         }
 
-        binding.rvItems.layoutManager = layoutManager
-        binding.rvItems.adapter = adapter
-        adapter.submitList(listItems)
-
-        pagination()
+        //pagination()
 
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
 
         // Iniciar con 0
         getData()
@@ -132,7 +124,14 @@ class HomeFragment : Fragment() {
                         }
                         listItems.add(item)
                     }
-                    adapter.notifyDataSetChanged()
+
+                    val adapter = ItemListAdapter {
+                        registerItem(it)
+                    }
+
+                    binding.rvItems.layoutManager = layoutManager
+                    binding.rvItems.adapter = adapter
+                    adapter.submitList(listItems)
                 },
                 { error ->
                     // TODO: Handle error
@@ -261,7 +260,10 @@ class HomeFragment : Fragment() {
                 shareViewModel.deleteItem(item)
                 "Eliminado de favoritos"
             }
-            Toast.makeText(binding.root.context, message, Toast.LENGTH_SHORT).show()
+            view?.let {
+                Snackbar.make(it, message, Snackbar.LENGTH_LONG)
+                    .setAction(Constants.FAVORITES, null).show()
+            }
         }
     }
 
@@ -272,14 +274,14 @@ class HomeFragment : Fragment() {
         if(listItemsFavorites.size < Constants.MAX_FAVORITES){
             addNewItem(item)
         } else {
-            Toast.makeText(
-                binding.root.context,
-                "Limite de favoritos alcanzado",
-                Toast.LENGTH_LONG
-            ).show()
+            view?.let {
+                Snackbar.make(it, "Limite de favoritos alcanzado", Snackbar.LENGTH_LONG)
+                    .setAction(Constants.FAVORITES, null).show()
+            }
         }
     }
 
+    // region menu
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
@@ -310,8 +312,11 @@ class HomeFragment : Fragment() {
             false
         }
     }
+    // endregion
 
-    // Pagination
+    /**
+     * Pagination
+     */
     private fun pagination() {
         binding.rvItems.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             var load: Boolean = true

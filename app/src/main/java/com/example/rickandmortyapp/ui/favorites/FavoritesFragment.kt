@@ -1,20 +1,23 @@
 package com.example.rickandmortyapp.ui.favorites
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.util.Log
+import android.view.*
+import android.widget.SearchView
 import android.widget.TextView
+import androidx.compose.ui.text.toLowerCase
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.rickandmortyapp.R
 import com.example.rickandmortyapp.data.Item
 import com.example.rickandmortyapp.data.ItemRoomDatabase
 import com.example.rickandmortyapp.databinding.FragmentFavoritesBinding
 import com.example.rickandmortyapp.ui.HomeViewModelFactory
 import com.example.rickandmortyapp.ui.ShareViewModel
 import com.example.rickandmortyapp.ui.home.ItemListAdapter
+import java.util.*
 
 class FavoritesFragment : Fragment() {
 
@@ -34,6 +37,14 @@ class FavoritesFragment : Fragment() {
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+
+
+    // Difinir variable para agregar a favoritos
+    private val adapter = ItemListAdapter {
+        removeItem(it)
+    }
+
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -66,10 +77,6 @@ class FavoritesFragment : Fragment() {
      * Get data favorites
      * */
     private fun getData(){
-        // Difinir variable para agregar a favoritos
-        val adapter = ItemListAdapter {
-            removeItem(it)
-        }
         binding.rvItems.layoutManager = LinearLayoutManager(this.context)
         binding.rvItems.adapter = adapter
 
@@ -92,4 +99,57 @@ class FavoritesFragment : Fragment() {
     private fun removeItem(item: Item){
         shareViewModel.deleteItem(item)
     }
+
+
+    // region menu
+    // region menu
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+
+        val search = menu.findItem(R.id.search)
+        val searchView = search.actionView as SearchView
+        searchView.queryHint = "Search favorite"
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                // Obtener datos del API
+                val list = mutableListOf<Item>()
+
+                shareViewModel.allItems.observe(viewLifecycleOwner){
+                        items ->
+                    if (items.isNotEmpty()){
+                        binding.textGallery.visibility = View.GONE
+                    } else {
+                        binding.textGallery.visibility = View.VISIBLE
+                    }
+
+                    items.map {
+                        if(it.name.lowercase(Locale.getDefault()).contains(query.toString().lowercase(Locale.getDefault()))){
+                            list.add(it)
+                        }
+                    }
+                    adapter.submitList(list)
+                }
+
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                return true
+            }
+        })
+
+        searchView.setOnCloseListener {
+            //listItems.clear()
+            getData()
+            false
+        }
+    }
+    // endregion
+    // endregion
 }
