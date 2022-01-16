@@ -268,7 +268,7 @@ class HomeFragment : Fragment() {
         } else {
             view?.let {
                 Snackbar.make(it, "Limite de favoritos alcanzado", Snackbar.LENGTH_LONG)
-                    .setAction(Constants.FAVORITES, null).show()
+                    .setAction(Constants.FAVORITES, {gotToFavorites()}).show()
             }
         }
     }
@@ -344,5 +344,9 @@ class HomeFragment : Fragment() {
                 }
             }
         })
+    }
+
+    private fun gotToFavorites(){
+        findNavController().navigate(HomeFragmentDirections.actionNavHomeToNavGallery())
     }
 }
