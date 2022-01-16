@@ -57,7 +57,7 @@ class HomeFragment : Fragment() {
     private var listItemsFavorites = mutableListOf<Item>()
 
     private val adapter = ItemListAdapter {
-        registerItem(it)
+        addNewItem(it)
     }
 
     override fun onCreateView(
@@ -236,42 +236,35 @@ class HomeFragment : Fragment() {
                     add = false
                 }
             }
+            val message : String
 
-            val message : String = if(add){
-                // Agregar
-                shareViewModel.addNewItem(
-                    item.id,
-                    item.name,
-                    item.specie,
-                    item.image,
-                    Constants.ITEM_FAVORITE
-                )
-                "Agregado a favoritos"
+            if(add){
+                message = if(listItemsFavorites.size < Constants.MAX_FAVORITES) {
+                    // Agregar
+                    shareViewModel.addNewItem(
+                        item.id,
+                        item.name,
+                        item.specie,
+                        item.image,
+                        Constants.ITEM_FAVORITE
+                    )
+                    "Agregado a favoritos"
+                } else {
+                    "Limite de favoritos alcanzado"
+                }
             } else {
                 // Eliminar
                 shareViewModel.deleteItem(item)
-                "Eliminado de favoritos"
+                message = "Eliminado de favoritos"
             }
             view?.let {
                 Snackbar.make(it, message, Snackbar.LENGTH_LONG)
-                    .setAction(Constants.FAVORITES, null).show()
+                    .setAction(Constants.FAVORITES) { gotToFavorites() }.show()
             }
         }
     }
 
-    /**
-     * Validate [Item] count and register
-     */
-    private fun registerItem(item: Item) {
-        if(listItemsFavorites.size < Constants.MAX_FAVORITES){
-            addNewItem(item)
-        } else {
-            view?.let {
-                Snackbar.make(it, "Limite de favoritos alcanzado", Snackbar.LENGTH_LONG)
-                    .setAction(Constants.FAVORITES, {gotToFavorites()}).show()
-            }
-        }
-    }
+
 
     // region menu
     override fun onCreate(savedInstanceState: Bundle?) {
