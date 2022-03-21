@@ -54,12 +54,7 @@ class ItemListAdapter(private val onItemClicked: (Item) -> Unit) :
                 }
 
                 // Item Favorite
-                if(item.favorite == 1){
-                    //binding.btnFavorite.setButtonDrawable(R.drawable.ic_yellow_star)
-                    binding.btnFavorite.background = binding.root.resources.getDrawable(R.drawable.ic_yellow_star, binding.root.context.theme)
-                } else {
-                    binding.btnFavorite.background = binding.root.resources.getDrawable(R.drawable.ic_grey_star, binding.root.context.theme)
-                }
+                binding.btnFavorite.isChecked = item.favorite == 1
 
                 // Cargando imagen
                 val imageRequest = ImageRequest(
